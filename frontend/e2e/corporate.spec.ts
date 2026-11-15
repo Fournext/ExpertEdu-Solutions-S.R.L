@@ -13,6 +13,7 @@ const CORPORATE_ROUTES = [
   '/contacto',
   '/soporte',
   '/privacidad',
+  '/terminos',
 ];
 
 test.describe('ExpertEdu Corporate Website E2E & Accessibility', () => {

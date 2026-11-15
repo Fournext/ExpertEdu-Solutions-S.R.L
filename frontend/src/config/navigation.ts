@@ -28,6 +28,7 @@ export const FOOTER_NAVIGATION = {
   ],
   legal: [
     { label: 'Política de Privacidad', href: '/privacidad' },
+    { label: 'Términos y Condiciones', href: '/terminos' },
     { label: 'Contacto Comercial', href: '/contacto' },
   ],
 } as const;

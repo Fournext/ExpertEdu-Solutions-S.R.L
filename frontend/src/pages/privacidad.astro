@@ -5,7 +5,7 @@ import { SITE_CONFIG } from '../config/site';
 
 <BaseLayout
   title="Política de privacidad | ExpertEdu"
-  description="Política de privacidad y tratamiento de datos personales del sitio corporativo de ExpertEdu Solutions S.R.L."
+  description="Política de privacidad, protección de datos personales y tratamiento de información académica de ExpertEdu Solutions S.R.L."
   canonicalPath="/privacidad"
 >
   <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
@@ -26,50 +26,118 @@ import { SITE_CONFIG } from '../config/site';
     <div class="mx-auto max-w-4xl space-y-8 px-4 text-sm leading-relaxed text-brand-slate sm:px-6 lg:px-8">
       <div>
         <h2 class="font-display text-xl font-bold text-brand-graphite">
-          1. Datos recopilados
+          1. Responsable del tratamiento
         </h2>
         <p class="mt-2">
-          A través de los formularios de contacto, solicitud de demostración y soporte técnico,
-          recopilamos únicamente los datos que usted proporciona de manera voluntaria: nombre
-          completo, correo electrónico, institución u organización, cargo referencial y el detalle
-          de su consulta o incidencia.
+          El responsable del tratamiento de los datos recopilados a través de este sitio web
+          corporativo y de los canales institucionales asociados es{' '}
+          <strong class="font-semibold text-brand-graphite">{SITE_CONFIG.legalName}</strong>, con
+          domicilio operativo en {SITE_CONFIG.location.city}, {SITE_CONFIG.location.country}.
         </p>
       </div>
 
       <div>
         <h2 class="font-display text-xl font-bold text-brand-graphite">
-          2. Finalidad del tratamiento
+          2. Datos recopilados
         </h2>
         <p class="mt-2">
-          La información se emplea exclusivamente para responder consultas comerciales, coordinar
-          demostraciones de ExpertEdu Studio, gestionar tickets de soporte técnico y dar
-          seguimiento a solicitudes institucionales. No comercializamos ni cedemos datos a
-          terceros con fines publicitarios.
+          En el sitio corporativo (`/contacto` y `/soporte`) recopilamos únicamente los datos que el
+          usuario proporciona de manera voluntaria: nombre completo, correo electrónico,
+          institución u organización, categoría de consulta o soporte y el detalle del mensaje o
+          incidencia.
+        </p>
+        <p class="mt-2">
+          En el contexto de uso académico de {SITE_CONFIG.productName}, la información de cuentas,
+          actividades y bases de conocimiento se gestiona de forma separada de este sitio
+          corporativo, limitándose a los datos estrictamente necesarios para la operación pedagógica
+          autorizada por el docente o la institución.
         </p>
       </div>
 
       <div>
         <h2 class="font-display text-xl font-bold text-brand-graphite">
-          3. Medidas de seguridad técnica
+          3. Finalidades del tratamiento y destinatarios
         </h2>
         <p class="mt-2">
-          Aplicamos validaciones de entrada, cifrado en tránsito mediante HTTPS en entornos de
-          producción, control de tasa de envíos y almacenamiento con hash unidireccional de
-          direcciones IP para prevenir abuso automatizado sin exponer información sensible.
+          Los datos recopilados se utilizan exclusivamente para:
+        </p>
+        <ul class="mt-2 list-disc space-y-1.5 pl-5">
+          <li>Responder consultas comerciales y coordinar demostraciones de {SITE_CONFIG.productName}.</li>
+          <li>Registrar, clasificar y dar seguimiento a tickets de soporte técnico.</li>
+          <li>Proveer y mantener el funcionamiento seguro de las herramientas educativas contratadas o autorizadas.</li>
+          <li>Prevenir abuso automatizado, spam o intentos de acceso no autorizado.</li>
+        </ul>
+        <p class="mt-2">
+          {SITE_CONFIG.legalName} no vende, alquila ni cede datos personales o académicos a terceros
+          con fines publicitarios o comerciales.
         </p>
       </div>
 
       <div>
         <h2 class="font-display text-xl font-bold text-brand-graphite">
-          4. Contacto sobre privacidad
+          4. Servicios externos de inteligencia artificial
         </h2>
         <p class="mt-2">
-          Para solicitar actualización o eliminación de sus registros de contacto, escriba a{' '}
+          Cuando una funcionalidad de asistencia mediante inteligencia artificial dentro de{' '}
+          {SITE_CONFIG.productName} requiera procesar solicitudes a través de proveedores externos
+          de modelos de lenguaje, el envío se limita al contexto técnico o académico necesario para
+          generar la sugerencia o explicación solicitada.
+        </p>
+        <p class="mt-2">
+          Dichos envíos quedan sujetos a las condiciones de privacidad aplicables y se recomienda a
+          docentes y estudiantes evitar incluir datos personales sensibles dentro de prompts, reglas
+          o ejemplos académicos.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          5. Períodos de conservación
+        </h2>
+        <p class="mt-2">
+          Los registros de contacto comercial y soporte técnico se conservan únicamente durante el
+          tiempo necesario para atender la solicitud, mantener la trazabilidad de incidencias y
+          cumplir con eventuales obligaciones administrativas o legales aplicables, tras lo cual son
+          eliminados o anonimizados de forma segura.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          6. Medidas de seguridad técnica
+        </h2>
+        <p class="mt-2">
+          Aplicamos validación estricta de entradas, cifrado en tránsito mediante HTTPS/TLS en
+          entornos de producción, aislamiento de base de datos entre el sitio corporativo y la
+          plataforma educativa, control de tasa de envíos (rate limiting), detección de duplicados y
+          almacenamiento con hash unidireccional (SHA-256) de direcciones IP para prevención de
+          abuso sin exponer información identificable.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          7. Derechos del usuario y contacto
+        </h2>
+        <p class="mt-2">
+          El titular de los datos puede solicitar en cualquier momento acceso, rectificación,
+          actualización o eliminación de sus registros escribiendo a{' '}
           <a
             href={`mailto:${SITE_CONFIG.contact.commercialEmail}`}
             class="font-semibold text-brand-primary hover:underline"
           >
             {SITE_CONFIG.contact.commercialEmail}
+          </a>{' '}
+          o a{' '}
+          <a
+            href={`mailto:${SITE_CONFIG.contact.supportEmail}`}
+            class="font-semibold text-brand-primary hover:underline"
+          >
+            {SITE_CONFIG.contact.supportEmail}
+          </a>
+          . Esta política se complementa con nuestros{' '}
+          <a href="/terminos" class="font-semibold text-brand-primary hover:underline">
+            Términos y Condiciones de Uso
           </a>
           .
         </p>

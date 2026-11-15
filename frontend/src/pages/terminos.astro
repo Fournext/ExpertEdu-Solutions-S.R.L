@@ -1,0 +1,175 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_CONFIG } from '../config/site';
+---
+
+<BaseLayout
+  title="Términos y condiciones de uso | ExpertEdu"
+  description="Términos y condiciones de uso del sitio web corporativo de ExpertEdu Solutions S.R.L. y criterios de uso académico, inteligencia artificial y motor de inferencia en ExpertEdu Studio."
+  canonicalPath="/terminos"
+>
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+        Marco de uso y responsabilidad
+      </p>
+      <h1 class="mt-3 font-display text-4xl font-bold tracking-tight text-brand-graphite">
+        Términos y condiciones de uso
+      </h1>
+      <p class="mt-4 text-base text-brand-slate">
+        {SITE_CONFIG.legalName} — {SITE_CONFIG.location.city}, {SITE_CONFIG.location.country}
+      </p>
+    </div>
+  </section>
+
+  <section class="py-14 sm:py-16">
+    <div class="mx-auto max-w-4xl space-y-8 px-4 text-sm leading-relaxed text-brand-slate sm:px-6 lg:px-8">
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          1. Objeto y alcance
+        </h2>
+        <p class="mt-2">
+          Los presentes Términos y Condiciones regulan el acceso y uso del sitio web corporativo de{' '}
+          <strong class="font-semibold text-brand-graphite">{SITE_CONFIG.legalName}</strong> y
+          establecen los lineamientos generales aplicables al uso académico de la plataforma{' '}
+          <strong class="font-semibold text-brand-graphite">{SITE_CONFIG.productName}</strong>. Al
+          navegar por este sitio o enviar solicitudes a través de sus formularios, el usuario acepta
+          estas condiciones.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          2. Finalidad pedagógica de la plataforma
+        </h2>
+        <p class="mt-2">
+          {SITE_CONFIG.productName} es una plataforma educativa destinada a apoyar la enseñanza y el
+          aprendizaje de Sistemas Expertos mediante herramientas interactivas para la creación,
+          edición, ejecución, simulación y validación de bases de conocimiento.
+        </p>
+        <p class="mt-2">
+          La plataforma constituye un recurso de apoyo pedagógico y tecnológico; en ningún caso
+          sustituye la orientación, supervisión académica ni evaluación realizada por un docente.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          3. Responsabilidades del docente y de la institución
+        </h2>
+        <p class="mt-2">
+          El docente es responsable de supervisar los contenidos académicos, configurar las
+          actividades formativas, verificar la coherencia técnica de las bases de conocimiento
+          utilizadas y revisar los resultados obtenidos por los estudiantes.
+        </p>
+        <p class="mt-2">
+          Todas las decisiones relacionadas con la publicación de actividades, la aceptación de
+          soluciones y la asignación de calificaciones permanecen bajo criterio y responsabilidad
+          exclusiva del docente o de la institución educativa.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          4. Uso de asistencia mediante inteligencia artificial
+        </h2>
+        <p class="mt-2">
+          {SITE_CONFIG.productName} puede incorporar funciones de asistencia mediante inteligencia
+          artificial orientadas a sugerir hechos, variables, reglas de producción, ejemplos y
+          explicaciones del razonamiento lógico.
+        </p>
+        <p class="mt-2">
+          Los contenidos generados automáticamente pueden presentar errores, omisiones o
+          imprecisiones. Por ello, deben considerarse propuestas de apoyo sujetas a revisión y
+          validación humana antes de incorporarse a una base de conocimiento o emplearse en
+          actividades académicas. {SITE_CONFIG.legalName} no garantiza la exactitud absoluta de las
+          sugerencias generadas mediante inteligencia artificial.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          5. Resultados del motor de inferencia
+        </h2>
+        <p class="mt-2">
+          El motor de inferencia procesa los hechos iniciales y las reglas definidas en cada base de
+          conocimiento conforme a los mecanismos implementados en la plataforma. La validez de las
+          conclusiones obtenidas depende directamente de la correcta formulación de las reglas, la
+          integridad de los hechos ingresados y la consistencia lógica de la base de conocimiento.
+        </p>
+        <p class="mt-2">
+          La ejecución técnica satisfactoria de un sistema experto no implica necesariamente que sus
+          conocimientos o conclusiones sean válidos respecto al dominio real representado sin una
+          revisión experta previa.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          6. Uso responsable, integridad académica y seguridad
+        </h2>
+        <p class="mt-2">
+          Los usuarios deben emplear el sitio corporativo y la plataforma exclusivamente para fines
+          lícitos y actividades autorizadas, respetando la integridad de los contenidos,
+          evaluaciones y recursos académicos.
+        </p>
+        <p class="mt-2">
+          Queda prohibida la manipulación no autorizada de actividades o evaluaciones, la
+          suplantación de identidad, el envío automatizado de spam o cualquier acción destinada a
+          comprometer la seguridad, confidencialidad o disponibilidad del servicio.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          7. Propiedad intelectual
+        </h2>
+        <p class="mt-2">
+          La marca {SITE_CONFIG.brandName}, el diseño del sitio corporativo, su código fuente y la
+          plataforma {SITE_CONFIG.productName} pertenecen a {SITE_CONFIG.legalName}. Los
+          materiales académicos y bases de conocimiento elaborados por docentes o instituciones
+          conservan la titularidad de sus autores conforme a los acuerdos académicos o
+          institucionales aplicables.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          8. Privacidad y protección de información académica
+        </h2>
+        <p class="mt-2">
+          El tratamiento de los datos personales y académicos se rige por nuestra{' '}
+          <a href="/privacidad" class="font-semibold text-brand-primary hover:underline">
+            Política de Privacidad
+          </a>
+          , donde se detallan las finalidades, medidas de seguridad, uso de servicios externos de
+          inteligencia artificial y canales para ejercer sus derechos.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          9. Contacto y actualizaciones
+        </h2>
+        <p class="mt-2">
+          Para consultas sobre estos términos, escriba a{' '}
+          <a
+            href={`mailto:${SITE_CONFIG.contact.commercialEmail}`}
+            class="font-semibold text-brand-primary hover:underline"
+          >
+            {SITE_CONFIG.contact.commercialEmail}
+          </a>{' '}
+          o, para asistencia técnica, a{' '}
+          <a
+            href={`mailto:${SITE_CONFIG.contact.supportEmail}`}
+            class="font-semibold text-brand-primary hover:underline"
+          >
+            {SITE_CONFIG.contact.supportEmail}
+          </a>
+          . {SITE_CONFIG.legalName} podrá actualizar estos lineamientos para reflejar mejoras
+          técnicas o requerimientos normativos vigentes.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
