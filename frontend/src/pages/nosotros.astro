@@ -1,0 +1,169 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import { SITE_CONFIG } from '@/config/site';
+import { FOUNDING_TEAM } from '@/config/team';
+import { ArrowRight, Compass, Eye, HeartHandshake, Lightbulb } from 'lucide-react';
+---
+
+<BaseLayout
+  title="Nosotros — ExpertEdu Solutions S.R.L."
+  description="Conoce a ExpertEdu Solutions S.R.L., nuestra misión, visión, valores, historia, filosofía de trabajo y equipo fundador en Santa Cruz de la Sierra, Bolivia."
+>
+  <!-- Hero -->
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+        Identidad corporativa
+      </p>
+      <h1 class="mt-2 max-w-3xl font-display text-4xl font-bold tracking-tight text-brand-graphite sm:text-5xl">
+        Ingeniería de software con propósito educativo
+      </h1>
+      <p class="mt-5 max-w-3xl text-base leading-relaxed text-brand-slate sm:text-lg">
+        <strong>{SITE_CONFIG.legalName}</strong> (marca comercial <strong>{SITE_CONFIG.brandName}</strong>)
+        es una empresa boliviana de tecnología educativa (EdTech) y desarrollo de software con sede
+        en {SITE_CONFIG.location.city}, {SITE_CONFIG.location.country}, dedicada a diseñar
+        herramientas digitales interactivas y accesibles para la educación superior.
+      </p>
+    </div>
+  </section>
+
+  <!-- Historia y motivación -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp grid gap-10 lg:grid-cols-12">
+      <div class="lg:col-span-6">
+        <SectionHeading
+          eyebrow="Historia y origen"
+          title="De los desafíos reales del aula a soluciones tecnológicas"
+        />
+        <p class="mt-4 text-sm leading-relaxed text-brand-slate sm:text-base">
+          ExpertEdu Solutions S.R.L. surge al observar las brechas prácticas en la enseñanza de
+          asignaturas tecnológicas complejas: docentes que invierten horas preparando diagramas en
+          pizarras o documentos aislados, y estudiantes que enfrentan herramientas de consola
+          desactualizadas sin retroalimentación visual.
+        </p>
+        <p class="mt-4 text-sm leading-relaxed text-brand-slate sm:text-base">
+          A partir de esa experiencia, decidimos construir plataformas web interactivas que
+          combinen rigor formal, interfaces claras y una arquitectura sostenible para instituciones
+          educativas de Bolivia y Latinoamérica.
+        </p>
+      </div>
+
+      <div class="grid gap-6 lg:col-span-6">
+        <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+          <div class="flex items-center gap-2.5 text-brand-primary">
+            <Compass className="h-5 w-5" aria-hidden="true" />
+            <h2 class="font-display text-xl font-bold text-brand-graphite">Misión</h2>
+          </div>
+          <p class="mt-3 text-sm leading-relaxed text-brand-slate">{SITE_CONFIG.mission}</p>
+        </div>
+
+        <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+          <div class="flex items-center gap-2.5 text-brand-primary">
+            <Eye className="h-5 w-5" aria-hidden="true" />
+            <h2 class="font-display text-xl font-bold text-brand-graphite">Visión</h2>
+          </div>
+          <p class="mt-3 text-sm leading-relaxed text-brand-slate">{SITE_CONFIG.vision}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Valores -->
+  <section class="border-y border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Principios"
+        title="Nuestros valores corporativos"
+        subtitle="Los principios que guían nuestras decisiones de arquitectura, diseño de producto y relación con cada institución."
+      />
+
+      <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {
+          SITE_CONFIG.values.map((val) => (
+            <div class="rounded-xl border border-brand-border bg-white p-5">
+              <h3 class="font-display text-base font-bold text-brand-graphite">{val.title}</h3>
+              <p class="mt-2 text-xs leading-relaxed text-brand-slate">{val.description}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Equipo fundador -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Equipo fundador"
+        title="Liderazgo técnico comprometido con la calidad"
+        subtitle="Integrantes fundadores de ExpertEdu Solutions S.R.L."
+      />
+
+      <div class="mt-10 grid gap-6 md:grid-cols-2">
+        {
+          FOUNDING_TEAM.map((member) => (
+            <article class="rounded-2xl border border-brand-border bg-white p-6 sm:p-8">
+              <div class="flex items-center gap-4">
+                <div
+                  class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-brand-primary font-display text-lg font-bold text-white"
+                  aria-hidden="true"
+                >
+                  {member.initials}
+                </div>
+                <div>
+                  <h3 class="font-display text-xl font-bold text-brand-graphite">{member.name}</h3>
+                  <p class="text-sm font-medium text-brand-primary">{member.configurableRole}</p>
+                </div>
+              </div>
+              <p class="mt-4 text-sm leading-relaxed text-brand-slate">{member.bio}</p>
+              <div class="mt-5 flex flex-wrap gap-2">
+                {member.focusAreas.map((area) => (
+                  <span class="rounded-md border border-brand-border bg-brand-surface px-2.5 py-1 text-xs font-medium text-brand-slate">
+                    {area}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Filosofía y compromiso -->
+  <section class="border-t border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp grid gap-8 md:grid-cols-2">
+      <div class="rounded-2xl border border-brand-border bg-white p-6 sm:p-8">
+        <HeartHandshake className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+        <h2 class="mt-4 font-display text-2xl font-bold text-brand-graphite">
+          Filosofía de trabajo
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-brand-slate">
+          Trabajamos de forma iterativa, transparente y orientada a resultados verificables.
+          Priorizamos la simplicidad operativa para el docente, la claridad didáctica para el
+          estudiante y la mantenibilidad técnica a largo plazo.
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-brand-border bg-white p-6 sm:p-8">
+        <Lightbulb className="h-6 w-6 text-brand-accent-dark" aria-hidden="true" />
+        <h2 class="mt-4 font-display text-2xl font-bold text-brand-graphite">
+          Compromiso con la innovación
+        </h2>
+        <p class="mt-3 text-sm leading-relaxed text-brand-slate">
+          Creemos en una innovación responsable: integramos visualización interactiva, validación
+          automatizada y asistencia inteligente sin sacrificar la autonomía pedagógica del docente
+          ni la privacidad de los datos académicos.
+        </p>
+        <a
+          href="/contacto"
+          class="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary hover:underline"
+        >
+          Conversar con el equipo
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

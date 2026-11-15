@@ -1,0 +1,178 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import { StudioAccessButton } from '@/components/ui/StudioAccessButton';
+import { ArrowRight, Building2, CheckCircle2, Code2, Cpu, Globe } from 'lucide-react';
+
+const categories = [
+  {
+    id: 'software-educativo',
+    title: 'Software educativo',
+    description:
+      'Desarrollo de plataformas orientadas a facilitar los procesos de enseñanza, la práctica guiada en laboratorio y el seguimiento de actividades académicas.',
+    capabilities: [
+      'Entornos interactivos por asignatura',
+      'Gestión de actividades y retroalimentación',
+      'Trazabilidad de entregas estudiantiles',
+    ],
+    icon: Code2,
+  },
+  {
+    id: 'aplicaciones-web',
+    title: 'Aplicaciones web interactivas',
+    description:
+      'Soluciones accesibles directamente desde navegadores modernos, diseñadas para ofrecer experiencias intuitivas sin requerir instalaciones complejas en laboratorio.',
+    capabilities: [
+      'Interfaces responsivas y accesibles',
+      'Editores gráficos y simuladores didácticos',
+      'Arquitecturas desacopladas de alto rendimiento',
+    ],
+    icon: Globe,
+  },
+  {
+    id: 'herramientas-ia',
+    title: 'Herramientas basadas en inteligencia artificial',
+    description:
+      'Aplicaciones que incorporan técnicas de IA simbólica y asistencia contextual para apoyar procesos de análisis, explicación paso a paso y aprendizaje.',
+    capabilities: [
+      'Motores de inferencia explicables',
+      'Validación lógica y detección de anomalías',
+      'Asistencia pedagógica supervisada por el docente',
+    ],
+    icon: Cpu,
+  },
+  {
+    id: 'soluciones-institucionales',
+    title: 'Soluciones institucionales',
+    description:
+      'Sistemas adaptados a los requerimientos operativos de universidades, facultades, direcciones de carrera y organizaciones educativas.',
+    capabilities: [
+      'Licenciamiento por carrera o facultad',
+      'Control de acceso basado en roles',
+      'Despliegue seguro en infraestructura cloud',
+    ],
+    icon: Building2,
+  },
+];
+---
+
+<BaseLayout
+  title="Soluciones Tecnológicas — ExpertEdu"
+  description="Conoce las áreas de especialización tecnológica de ExpertEdu Solutions S.R.L. y nuestro producto principal ExpertEdu Studio."
+>
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+        Portafolio y capacidades
+      </p>
+      <h1 class="mt-2 max-w-3xl font-display text-4xl font-bold tracking-tight text-brand-graphite sm:text-5xl">
+        Soluciones tecnológicas diseñadas para la educación
+      </h1>
+      <p class="mt-5 max-w-3xl text-base leading-relaxed text-brand-slate sm:text-lg">
+        En ExpertEdu desarrollamos software educativo propio y brindamos capacidades de ingeniería
+        para modernizar la enseñanza y la gestión académica en instituciones educativas.
+      </p>
+    </div>
+  </section>
+
+  <!-- Producto comercial terminado destacado -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <div class="rounded-2xl border-2 border-brand-primary/25 bg-white p-8 shadow-sm sm:p-10">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-brand-accent-dark">
+            Producto comercial disponible
+          </span>
+          <span class="text-xs font-medium text-brand-muted">Plataforma SaaS Web</span>
+        </div>
+
+        <div class="mt-5 grid gap-8 lg:grid-cols-12 lg:items-center">
+          <div class="lg:col-span-7">
+            <h2 class="font-display text-3xl font-bold text-brand-graphite">ExpertEdu Studio</h2>
+            <p class="mt-3 text-base leading-relaxed text-brand-slate">
+              Nuestro producto principal del portafolio: una plataforma educativa interactiva de
+              apoyo docente para la enseñanza de Sistemas Expertos. Integra editor visual de
+              conocimiento, motor Forward Chaining paso a paso, validación estática y gestión de
+              actividades.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+              <a
+                href="/producto"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-5 py-3 text-sm font-semibold text-white hover:bg-brand-primary-hover"
+              >
+                Explorar ExpertEdu Studio
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+              <StudioAccessButton client:load variant="outline" />
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-brand-border bg-brand-surface p-5 lg:col-span-5">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+              Diferenciación clara
+            </p>
+            <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+              <strong>ExpertEdu Studio</strong> es nuestro producto SaaS operativo. Las áreas
+              detalladas a continuación representan nuestras capacidades tecnológicas para proyectos
+              y soluciones institucionales a medida.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorías de capacidades -->
+  <section class="border-t border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Áreas de desarrollo"
+        title="Capacidades tecnológicas de ExpertEdu"
+        subtitle="Cuatro líneas técnicas sobre las que construimos plataformas educativas confiables y escalables."
+      />
+
+      <div class="mt-12 grid gap-6 md:grid-cols-2">
+        {
+          categories.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <article
+                id={cat.id}
+                class="rounded-2xl border border-brand-border bg-white p-6 sm:p-8"
+              >
+                <div class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary-light/60 text-brand-primary">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <h3 class="mt-4 font-display text-2xl font-bold text-brand-graphite">
+                  {cat.title}
+                </h3>
+                <p class="mt-2.5 text-sm leading-relaxed text-brand-slate">{cat.description}</p>
+                <ul class="mt-5 space-y-2 border-t border-brand-border pt-4">
+                  {cat.capabilities.map((cap) => (
+                    <li class="flex items-center gap-2 text-xs font-medium text-brand-slate">
+                      <CheckCircle2
+                        className="h-4 w-4 shrink-0 text-brand-accent-dark"
+                        aria-hidden="true"
+                      />
+                      <span>{cap}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })
+        }
+      </div>
+
+      <div class="mt-12 text-center">
+        <a
+          href="/contacto?tipo=TECH_SERVICES"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-graphite px-6 py-3.5 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          Consultar sobre servicios tecnológicos
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

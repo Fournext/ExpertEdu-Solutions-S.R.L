@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { SITE_CONFIG } from '../config/site';
+---
+
+<BaseLayout
+  title="Política de privacidad | ExpertEdu"
+  description="Política de privacidad y tratamiento de datos personales del sitio corporativo de ExpertEdu Solutions S.R.L."
+  canonicalPath="/privacidad"
+>
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+        Transparencia y seguridad
+      </p>
+      <h1 class="mt-3 font-display text-4xl font-bold tracking-tight text-brand-graphite">
+        Política de privacidad
+      </h1>
+      <p class="mt-4 text-base text-brand-slate">
+        {SITE_CONFIG.legalName} — {SITE_CONFIG.location.city}, {SITE_CONFIG.location.country}
+      </p>
+    </div>
+  </section>
+
+  <section class="py-14 sm:py-16">
+    <div class="mx-auto max-w-4xl space-y-8 px-4 text-sm leading-relaxed text-brand-slate sm:px-6 lg:px-8">
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          1. Datos recopilados
+        </h2>
+        <p class="mt-2">
+          A través de los formularios de contacto, solicitud de demostración y soporte técnico,
+          recopilamos únicamente los datos que usted proporciona de manera voluntaria: nombre
+          completo, correo electrónico, institución u organización, cargo referencial y el detalle
+          de su consulta o incidencia.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          2. Finalidad del tratamiento
+        </h2>
+        <p class="mt-2">
+          La información se emplea exclusivamente para responder consultas comerciales, coordinar
+          demostraciones de ExpertEdu Studio, gestionar tickets de soporte técnico y dar
+          seguimiento a solicitudes institucionales. No comercializamos ni cedemos datos a
+          terceros con fines publicitarios.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          3. Medidas de seguridad técnica
+        </h2>
+        <p class="mt-2">
+          Aplicamos validaciones de entrada, cifrado en tránsito mediante HTTPS en entornos de
+          producción, control de tasa de envíos y almacenamiento con hash unidireccional de
+          direcciones IP para prevenir abuso automatizado sin exponer información sensible.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-bold text-brand-graphite">
+          4. Contacto sobre privacidad
+        </h2>
+        <p class="mt-2">
+          Para solicitar actualización o eliminación de sus registros de contacto, escriba a{' '}
+          <a
+            href={`mailto:${SITE_CONFIG.contact.commercialEmail}`}
+            class="font-semibold text-brand-primary hover:underline"
+          >
+            {SITE_CONFIG.contact.commercialEmail}
+          </a>
+          .
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

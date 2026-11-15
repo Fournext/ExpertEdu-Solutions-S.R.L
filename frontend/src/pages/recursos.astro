@@ -1,0 +1,85 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeading from '../components/ui/SectionHeading.astro';
+import { ResourcesExplorer, type ResourceSummary } from '../components/interactive/ResourcesExplorer';
+import { FaqAccordion, type FaqItem } from '../components/interactive/FaqAccordion';
+
+const entries = (await getCollection('recursos')).sort((a, b) =>
+  b.data.publishedAt.localeCompare(a.data.publishedAt),
+);
+
+const resourceSummaries: ResourceSummary[] = entries.map((entry) => ({
+  slug: entry.id,
+  title: entry.data.title,
+  description: entry.data.description,
+  category: entry.data.category,
+  publishedAt: entry.data.publishedAt,
+  readingTime: entry.data.readingTime,
+}));
+
+const RECURSOS_FAQS: FaqItem[] = [
+  {
+    question: '¿Qué tipo de contenidos publica ExpertEdu en esta sección?',
+    answer:
+      'Publicamos artículos técnicos, guías metodológicas y tutoriales sobre ingeniería del conocimiento, motor de inferencia Forward Chaining, validación de bases de conocimiento y transformación digital en educación superior.',
+  },
+  {
+    question: '¿Los recursos son exclusivos para instituciones clientes?',
+    answer:
+      'No. La documentación educativa y los artículos conceptuales están abiertos para docentes, estudiantes y responsables académicos interesados en conocer cómo aplicamos la tecnología al aprendizaje.',
+  },
+  {
+    question: '¿Puedo solicitar una sesión práctica para mi carrera o facultad?',
+    answer:
+      'Sí. Puede coordinar una demostración guiada de ExpertEdu Studio desde la página de contacto, indicando su institución y objetivos académicos.',
+  },
+  {
+    question: '¿Dónde reporto una duda técnica sobre la plataforma?',
+    answer:
+      'Si ya utiliza ExpertEdu Studio o requiere asistencia técnica específica, puede registrar un ticket desde nuestra página de soporte o escribir a soporte@expertedu.bo.',
+  },
+];
+---
+
+<BaseLayout
+  title="Recursos y documentación | ExpertEdu"
+  description="Artículos, guías y tutoriales técnicos de ExpertEdu sobre software educativo, bases de conocimiento, Forward Chaining y transformación digital universitaria."
+  canonicalPath="/recursos"
+>
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="max-w-3xl">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+          Centro de conocimiento
+        </p>
+        <h1 class="mt-3 font-display text-4xl font-bold tracking-tight text-brand-graphite sm:text-5xl">
+          Recursos, guías y artículos técnicos
+        </h1>
+        <p class="mt-5 text-lg leading-relaxed text-brand-slate">
+          Material de apoyo para docentes, estudiantes y equipos académicos sobre diseño de bases de
+          conocimiento, razonamiento Forward Chaining e implementación de tecnología educativa.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 sm:py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <ResourcesExplorer client:load resources={resourceSummaries} />
+    </div>
+  </section>
+
+  <section class="border-t border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+      <SectionHeading
+        eyebrow="Preguntas frecuentes"
+        title="Dudas habituales sobre recursos y acompañamiento"
+        align="center"
+      />
+      <div class="mt-10">
+        <FaqAccordion client:load items={RECURSOS_FAQS} />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

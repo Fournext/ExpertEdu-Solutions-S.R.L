@@ -1,0 +1,142 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import {
+  PLAN_COMPARISON_ROWS,
+  PRICING_NOTICE,
+  PRICING_PLANS,
+} from '@/config/pricing';
+import { CheckCircle2, Info } from 'lucide-react';
+---
+
+<BaseLayout
+  title="Planes y Precios Referenciales — ExpertEdu"
+  description="Consulta los planes referenciales de ExpertEdu Studio en Bolivianos (Bs.): Comunidad, Cátedra Pro, Carrera Universitaria y Facultad Completa."
+>
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+        Esquema comercial referencial
+      </p>
+      <h1 class="mt-2 max-w-3xl font-display text-4xl font-bold tracking-tight text-brand-graphite sm:text-5xl">
+        Planes adaptados a docentes, carreras y facultades
+      </h1>
+      <p class="mt-5 max-w-3xl text-base leading-relaxed text-brand-slate sm:text-lg">
+        Presentamos nuestra estructura referencial de planes en Bolivianos (Bs.) para facilitar la
+        evaluación académica e institucional.
+      </p>
+
+      <div class="mt-6 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/70 p-4 text-xs leading-relaxed text-brand-slate sm:text-sm">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
+        <p>{PRICING_NOTICE}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tarjetas de planes -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {
+          PRICING_PLANS.map((plan) => (
+            <article
+              class={`flex flex-col justify-between rounded-2xl border p-6 ${
+                plan.highlighted
+                  ? 'border-brand-primary bg-white ring-2 ring-brand-primary/15 shadow-sm'
+                  : 'border-brand-border bg-white'
+              }`}
+            >
+              <div>
+                <div class="flex items-center justify-between gap-2">
+                  <h2 class="font-display text-xl font-bold text-brand-graphite">{plan.name}</h2>
+                  {plan.badge && (
+                    <span class="rounded-full bg-brand-primary-light px-2.5 py-0.5 text-[11px] font-semibold text-brand-primary">
+                      {plan.badge}
+                    </span>
+                  )}
+                </div>
+                <p class="mt-1 text-xs font-medium text-brand-muted">{plan.audience}</p>
+
+                <div class="mt-5 border-b border-brand-border pb-5">
+                  <p class="font-display text-3xl font-bold text-brand-graphite">
+                    {plan.priceDisplay}
+                  </p>
+                  <p class="mt-1 text-xs text-brand-muted">{plan.billingNote}</p>
+                </div>
+
+                <p class="mt-4 text-xs leading-relaxed text-brand-slate">{plan.summary}</p>
+
+                <ul class="mt-5 space-y-2.5">
+                  {plan.features.map((feat) => (
+                    <li class="flex items-start gap-2 text-xs text-brand-slate">
+                      <CheckCircle2
+                        className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent-dark"
+                        aria-hidden="true"
+                      />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div class="mt-6 pt-4">
+                <a
+                  href={plan.ctaHref}
+                  class={`inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-center text-xs font-semibold transition-colors ${
+                    plan.highlighted
+                      ? 'bg-brand-primary text-white hover:bg-brand-primary-hover'
+                      : 'border border-brand-border bg-brand-surface text-brand-graphite hover:bg-slate-100'
+                  }`}
+                >
+                  {plan.ctaLabel}
+                </a>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabla comparativa -->
+  <section class="border-t border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Comparativa"
+        title="Resumen de capacidades por plan"
+        subtitle="Compara los alcances referenciales antes de solicitar información o coordinar una licencia institucional."
+      />
+
+      <div class="mt-10 overflow-x-auto rounded-2xl border border-brand-border bg-white">
+        <table class="w-full min-w-[680px] text-left text-sm">
+          <thead class="border-b border-brand-border bg-slate-50 text-xs uppercase tracking-wider text-brand-muted">
+            <tr>
+              <th scope="col" class="px-5 py-4 font-semibold">Característica</th>
+              {
+                PRICING_PLANS.map((plan) => (
+                  <th scope="col" class="px-5 py-4 font-semibold text-brand-graphite">
+                    {plan.name}
+                  </th>
+                ))
+              }
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-border">
+            {
+              PLAN_COMPARISON_ROWS.map((row) => (
+                <tr>
+                  <th scope="row" class="px-5 py-4 font-medium text-brand-graphite">
+                    {row.feature}
+                  </th>
+                  {row.values.map((val) => (
+                    <td class="px-5 py-4 text-xs text-brand-slate">{val}</td>
+                  ))}
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

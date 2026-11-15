@@ -1,0 +1,409 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import { StudioAccessButton } from '@/components/ui/StudioAccessButton';
+import { SITE_CONFIG } from '@/config/site';
+import {
+  ArrowRight,
+  BookOpenCheck,
+  Building2,
+  CheckCircle2,
+  Code2,
+  Layers,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Workflow,
+} from 'lucide-react';
+
+const specializations = [
+  {
+    title: 'Desarrollo de software educativo',
+    description:
+      'Diseñamos herramientas digitales a medida para asignaturas técnicas, integrando rigor académico, trazabilidad y facilidad de uso.',
+    href: '/soluciones#software-educativo',
+    icon: Code2,
+  },
+  {
+    title: 'Plataformas interactivas de aprendizaje',
+    description:
+      'Creamos entornos web accesibles desde cualquier navegador moderno para transformar conceptos abstractos en experiencias prácticas.',
+    href: '/producto',
+    icon: Workflow,
+  },
+  {
+    title: 'Soluciones tecnológicas para instituciones académicas',
+    description:
+      'Acompañamos a carreras, facultades y universidades en la modernización de laboratorios y gestión de actividades prácticas.',
+    href: '/universidades',
+    icon: Building2,
+  },
+];
+
+const reasons = [
+  {
+    title: 'Soluciones centradas en el usuario',
+    description:
+      'Cada flujo parte de las necesidades reales de docentes, estudiantes y autoridades académicas.',
+    icon: Users,
+  },
+  {
+    title: 'Innovación aplicada a la educación',
+    description:
+      'Incorporamos tecnologías web modernas y técnicas de IA simbólica con propósito pedagógico claro.',
+    icon: Sparkles,
+  },
+  {
+    title: 'Interfaces intuitivas',
+    description:
+      'Reducimos la curva de aprendizaje técnico para que el enfoque permanezca en el conocimiento.',
+    icon: Layers,
+  },
+  {
+    title: 'Tecnología adaptable',
+    description:
+      'Arquitecturas modulares preparadas para evolucionar junto a los requerimientos de cada institución.',
+    icon: Workflow,
+  },
+  {
+    title: 'Seguridad y mantenibilidad',
+    description:
+      'Construimos sobre estándares de ingeniería, validación estricta y protección de datos personales.',
+    icon: ShieldCheck,
+  },
+  {
+    title: 'Acompañamiento técnico',
+    description:
+      'Brindamos soporte estructurado en niveles de autoservicio, mesa de ayuda e ingeniería.',
+    icon: BookOpenCheck,
+  },
+];
+
+const methodologySteps = [
+  {
+    step: '01',
+    title: 'Identificación de necesidades',
+    text: 'Relevamiento de desafíos pedagógicos y operativos con docentes e instituciones.',
+  },
+  {
+    step: '02',
+    title: 'Análisis y diseño',
+    text: 'Modelado de arquitectura, experiencia de usuario y contratos de datos claros.',
+  },
+  {
+    step: '03',
+    title: 'Desarrollo',
+    text: 'Implementación iterativa con tipado estricto y separación de responsabilidades.',
+  },
+  {
+    step: '04',
+    title: 'Pruebas de calidad',
+    text: 'Verificación automatizada funcional, de seguridad, rendimiento y accesibilidad.',
+  },
+  {
+    step: '05',
+    title: 'Implementación',
+    text: 'Despliegue controlado en entornos en la nube con alta disponibilidad y respaldo.',
+  },
+  {
+    step: '06',
+    title: 'Soporte y mejora continua',
+    text: 'Seguimiento post-despliegue, atención de incidencias y evolución planificada.',
+  },
+];
+---
+
+<BaseLayout
+  title="ExpertEdu — Tecnología Educativa y Desarrollo de Software"
+  description="ExpertEdu Solutions S.R.L. desarrolla soluciones tecnológicas educativas innovadoras, plataformas interactivas de aprendizaje y software para universidades en Bolivia y Latinoamérica."
+>
+  <!-- Hero Principal -->
+  <section class="relative overflow-hidden border-b border-brand-border bg-brand-surface">
+    <div class="container-corp py-16 sm:py-22 lg:py-24">
+      <div class="grid items-center gap-12 lg:grid-cols-12">
+        <div class="lg:col-span-7">
+          <p class="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-white px-3.5 py-1.5 text-xs font-semibold text-brand-primary">
+            <span class="h-2 w-2 rounded-full bg-brand-accent" aria-hidden="true"></span>
+            {SITE_CONFIG.legalName} — {SITE_CONFIG.location.city}, {SITE_CONFIG.location.country}
+          </p>
+          <h1 class="mt-5 font-display text-4xl font-bold tracking-tight text-brand-graphite sm:text-5xl lg:text-[3.25rem] lg:leading-[1.12]">
+            Tecnología que transforma la educación
+          </h1>
+          <p class="mt-5 max-w-2xl text-base leading-relaxed text-brand-slate sm:text-lg">
+            Diseñamos soluciones de software innovadoras que conectan tecnología, conocimiento y
+            experiencias de aprendizaje para docentes, estudiantes e instituciones de educación
+            superior.
+          </p>
+          <div class="mt-8 flex flex-wrap items-center gap-4">
+            <a
+              href="/soluciones"
+              class="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-6 py-3.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-brand-primary-hover"
+            >
+              Explorar soluciones
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+            <a
+              href="/contacto"
+              class="inline-flex items-center gap-2 rounded-lg border border-brand-border bg-white px-6 py-3.5 text-sm font-semibold text-brand-graphite transition-colors hover:bg-slate-50"
+            >
+              Contáctanos
+            </a>
+          </div>
+        </div>
+
+        <!-- Original architectural software/knowledge visual composition -->
+        <div class="lg:col-span-5">
+          <div class="rounded-2xl border border-brand-border bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between border-b border-brand-border pb-4">
+              <div class="flex items-center gap-2">
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300" aria-hidden="true"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-slate-300" aria-hidden="true"></span>
+                <span class="h-2.5 w-2.5 rounded-full bg-brand-accent" aria-hidden="true"></span>
+              </div>
+              <span class="font-mono text-xs font-medium text-brand-muted">
+                expertedu.bo/arquitectura
+              </span>
+            </div>
+
+            <div class="mt-5 space-y-3.5">
+              <div class="rounded-xl border border-brand-primary/20 bg-brand-primary-light/30 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wider text-brand-primary">
+                  Ecosistema EdTech
+                </p>
+                <p class="mt-1 font-display text-base font-bold text-brand-graphite">
+                  Software Educativo + Plataformas Web Interactivas
+                </p>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-xl border border-brand-border bg-brand-surface p-3.5">
+                  <p class="text-xs font-semibold text-brand-muted">Producto principal</p>
+                  <p class="mt-1 font-display text-sm font-bold text-brand-graphite">
+                    ExpertEdu Studio
+                  </p>
+                  <p class="mt-1 text-xs text-brand-slate">
+                    Modelado visual y motor Forward Chaining
+                  </p>
+                </div>
+                <div class="rounded-xl border border-brand-border bg-brand-surface p-3.5">
+                  <p class="text-xs font-semibold text-brand-muted">Enfoque B2B</p>
+                  <p class="mt-1 font-display text-sm font-bold text-brand-graphite">
+                    Universidades
+                  </p>
+                  <p class="mt-1 text-xs text-brand-slate">
+                    Laboratorios web y gestión académica
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-xs">
+                <span class="font-semibold text-brand-accent-dark">
+                  Validación, trazabilidad y accesibilidad web
+                </span>
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-accent-dark" aria-hidden="true" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ¿Qué hacemos? -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="¿Qué hacemos?"
+        title="Tres líneas de especialización tecnológica"
+        subtitle="Combinamos ingeniería de software moderna con diseño pedagógico para crear soluciones educativas sólidas y mantenibles."
+      />
+
+      <div class="mt-12 grid gap-6 md:grid-cols-3">
+        {
+          specializations.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article class="flex flex-col justify-between rounded-2xl border border-brand-border bg-white p-6 transition-shadow hover:shadow-md">
+                <div>
+                  <div class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary-light/60 text-brand-primary">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h3 class="mt-5 font-display text-xl font-bold text-brand-graphite">
+                    {item.title}
+                  </h3>
+                  <p class="mt-2.5 text-sm leading-relaxed text-brand-slate">
+                    {item.description}
+                  </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-brand-border">
+                  <a
+                    href={item.href}
+                    class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary hover:underline"
+                  >
+                    Explorar línea
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                </div>
+              </article>
+            );
+          })
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Producto destacado: ExpertEdu Studio -->
+  <section class="border-y border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <div class="grid items-center gap-10 lg:grid-cols-12">
+        <div class="lg:col-span-6">
+          <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+            Nuestro producto destacado
+          </p>
+          <h2 class="mt-2 font-display text-3xl font-bold tracking-tight text-brand-graphite sm:text-4xl">
+            ExpertEdu Studio
+          </h2>
+          <p class="mt-4 text-base leading-relaxed text-brand-slate">
+            Plataforma educativa interactiva de apoyo docente para la enseñanza de Sistemas Expertos.
+            Unifica la diagramación visual de bases de conocimiento, la validación estática de
+            inconsistencias y la simulación paso a paso del motor de inferencia Forward Chaining.
+          </p>
+
+          <div class="mt-6 grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl border border-brand-border bg-white p-4">
+              <h3 class="font-display text-sm font-bold text-brand-graphite">Para docentes</h3>
+              <p class="mt-1 text-xs leading-relaxed text-brand-slate">
+                Prepara ejercicios visuales, publica actividades con espacios aislados y revisa
+                entregas con trazabilidad clara.
+              </p>
+            </div>
+            <div class="rounded-xl border border-brand-border bg-white p-4">
+              <h3 class="font-display text-sm font-bold text-brand-graphite">Para estudiantes</h3>
+              <p class="mt-1 text-xs leading-relaxed text-brand-slate">
+                Comprende cómo se evalúan condiciones, se resuelven conflictos y se deducen hechos
+                sin depender de consolas crípticas.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-8 flex flex-wrap items-center gap-4">
+            <StudioAccessButton client:load fallbackLabel="Solicitar demostración" />
+            <a
+              href="/producto"
+              class="inline-flex items-center gap-2 rounded-lg border border-brand-border bg-white px-5 py-3 text-sm font-semibold text-brand-graphite hover:bg-slate-50"
+            >
+              Ver detalles del producto
+            </a>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6">
+          <div class="rounded-2xl border border-brand-border bg-white p-6 shadow-xs">
+            <p class="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+              Capacidades principales de ExpertEdu Studio
+            </p>
+            <ul class="mt-4 space-y-3">
+              {
+                [
+                  'Editor visual interactivo para hechos, variables, condiciones, reglas y conclusiones',
+                  'Motor de inferencia Forward Chaining con ejecución completa y paso a paso',
+                  'Visualización del proceso de razonamiento y árbol explicativo',
+                  'Validación estática previa de reglas duplicadas, contradictorias o ciclos',
+                  'Gestión de cursos, actividades educativas y trazabilidad de entregas',
+                ].map((feature) => (
+                  <li class="flex items-start gap-2.5 text-sm text-brand-slate">
+                    <CheckCircle2
+                      className="mt-0.5 h-4 w-4 shrink-0 text-brand-accent-dark"
+                      aria-hidden="true"
+                    />
+                    <span>{feature}</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Por qué elegir ExpertEdu -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Propuesta de valor"
+        title="¿Por qué elegir ExpertEdu?"
+        subtitle="Trabajamos bajo criterios estrictos de ingeniería de software, accesibilidad y cercanía con las instituciones educativas."
+        align="center"
+      />
+
+      <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          reasons.map((reason) => {
+            const Icon = reason.icon;
+            return (
+              <div class="rounded-2xl border border-brand-border bg-white p-6">
+                <Icon className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+                <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+                  {reason.title}
+                </h3>
+                <p class="mt-2 text-sm leading-relaxed text-brand-slate">{reason.description}</p>
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Nuestra metodología -->
+  <section class="border-t border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Nuestra metodología"
+        title="Un proceso estructurado de punta a punta"
+        subtitle="Cada solución educativa sigue un ciclo disciplinado que prioriza la estabilidad, la seguridad y el impacto pedagógico."
+      />
+
+      <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          methodologySteps.map((item) => (
+            <div class="rounded-2xl border border-brand-border bg-white p-6">
+              <span class="font-mono text-xs font-bold text-brand-primary">{item.step}</span>
+              <h3 class="mt-2 font-display text-lg font-bold text-brand-graphite">{item.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-brand-slate">{item.text}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA final -->
+  <section class="bg-brand-graphite py-16 text-white sm:py-20">
+    <div class="container-corp text-center">
+      <h2 class="mx-auto max-w-2xl font-display text-3xl font-bold tracking-tight sm:text-4xl">
+        Construyamos juntos nuevas experiencias educativas
+      </h2>
+      <p class="mx-auto mt-4 max-w-xl text-base text-slate-300">
+        Conversemos sobre las necesidades de tu cátedra, carrera o institución para evaluar cómo
+        ExpertEdu puede aportar valor real.
+      </p>
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a
+          href="/contacto"
+          class="inline-flex items-center gap-2 rounded-lg bg-brand-accent px-6 py-3.5 text-sm font-semibold text-brand-graphite transition-colors hover:bg-emerald-400"
+        >
+          Hablar con ExpertEdu
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
+        <a
+          href="/precios"
+          class="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
+        >
+          Ver planes referenciales
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

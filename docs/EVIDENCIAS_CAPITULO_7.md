@@ -1,0 +1,13 @@
+# Evidencias Visuales — Capítulo 7 (Sitio Web Corporativo ExpertEdu)
+
+Todas las capturas han sido generadas automáticamente mediante Playwright sobre la compilación de producción del sitio web corporativo conectado a la API REST real de **ExpertEdu Solutions S.R.L.**, utilizando únicamente datos institucionales de prueba sin información sensible.
+
+| Figura | Archivo | Sección / Página | Ruta | Descripción y funcionalidad verificada | Estado |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Figura 7.1** | `docs/evidencias/fig-7-1-inicio.png` | Página principal corporativa | `/` | Hero corporativo («Tecnología que transforma la educación»), tres líneas de especialización, bloque destacado de ExpertEdu Studio, propuesta de valor, metodología empresarial y footer completo. | Implementado y verificado |
+| **Figura 7.2** | `docs/evidencias/fig-7-2-nosotros.png` | Página Nosotros | `/nosotros` | Identidad corporativa de ExpertEdu Solutions S.R.L., origen, misión, visión, valores y presentación del equipo fundador (D'alessandro Copa Monzon y Cesar Sebastian Zeballos) sin cargos ni fotografías ficticias. | Implementado y verificado |
+| **Figura 7.3** | `docs/evidencias/fig-7-3-soluciones.png` | Página Soluciones | `/soluciones` | Portafolio tecnológico por áreas (software educativo, aplicaciones web interactivas, herramientas basadas en IA y soluciones institucionales) destacando ExpertEdu Studio como producto terminado. | Implementado y verificado |
+| **Figura 7.4** | `docs/evidencias/fig-7-4-producto-expertedu-studio.png` | Página de producto (ExpertEdu Studio) | `/producto` | Presentación comercial de ExpertEdu Studio: editor visual, validación de bases de conocimiento, trazabilidad de actividades, asistencia IA, recorrido ilustrativo Forward Chaining y FAQ. | Implementado y verificado |
+| **Figura 7.5** | `docs/evidencias/fig-7-5-contacto.png` | Página de contacto | `/contacto` | Formulario completo de contacto y solicitud de demostración junto con canales oficiales (`contacto@expertedu.bo`, `soporte@expertedu.bo`) y ubicación en Santa Cruz de la Sierra, Bolivia. | Implementado y verificado |
+| **Figura 7.5b** | `docs/evidencias/fig-7-5b-contacto-confirmacion.png` | Confirmación de envío real en `/contacto` | `/contacto` | Respuesta exitosa del backend Django (`/api/v1/contact/`) mostrando el código de referencia generado tras validar y persistir la solicitud de prueba. | Implementado y verificado |
+| **Figura 7.6** | `docs/evidencias/fig-7-6-responsive-movil.png` | Vista móvil responsive (390x844) | `/` | Adaptación móvil de la página de inicio con menú de navegación desplegable accesible por teclado y botón de demostración. | Implementado y verificado |

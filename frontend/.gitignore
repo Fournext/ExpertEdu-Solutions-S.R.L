@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Astro build output & cache
+dist/
+.astro/
+*.tsbuildinfo
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local environment
+.env
+.env.*
+!.env.example

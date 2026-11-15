@@ -1,0 +1,100 @@
+---
+import '@/styles/global.css';
+import { SiteHeader } from '@/components/layout/SiteHeader';
+import SiteFooter from '@/components/layout/SiteFooter.astro';
+import { SITE_CONFIG } from '@/config/site';
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalPath?: string;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
+  structuredData?: Record<string, unknown>;
+}
+
+const {
+  title,
+  description,
+  canonicalPath = Astro.url.pathname,
+  ogType = 'website',
+  noindex = false,
+  structuredData,
+} = Astro.props;
+
+const canonicalUrl = new URL(canonicalPath, SITE_CONFIG.domain).toString();
+const fullTitle = title.includes(SITE_CONFIG.brandName)
+  ? title
+  : `${title} | ${SITE_CONFIG.brandName}`;
+
+const defaultOrgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE_CONFIG.legalName,
+  alternateName: SITE_CONFIG.brandName,
+  url: SITE_CONFIG.domain,
+  email: SITE_CONFIG.contact.commercialEmail,
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: SITE_CONFIG.location.city,
+    addressCountry: 'BO',
+  },
+};
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#1E40AF" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE_CONFIG.brandName} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content="es_BO" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+
+    <!-- Typography: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(structuredData || defaultOrgSchema)}
+    />
+  </head>
+  <body class="flex min-h-screen flex-col bg-white text-brand-graphite">
+    <a
+      href="#contenido-principal"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-brand-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+    >
+      Ir al contenido principal
+    </a>
+
+    <SiteHeader client:load currentPath={Astro.url.pathname} />
+
+    <main id="contenido-principal" class="flex-1">
+      <slot />
+    </main>
+
+    <SiteFooter />
+  </body>
+</html>

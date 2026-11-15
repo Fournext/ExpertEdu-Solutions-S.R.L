@@ -1,0 +1,20 @@
+# Python virtual environments
+venv/
+.venv/
+
+# Bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django generated files
+staticfiles/
+media/
+
+# Local environment
+.env
+.env.*
+!.env.example

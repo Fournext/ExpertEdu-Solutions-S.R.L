@@ -1,0 +1,281 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SectionHeading from '@/components/ui/SectionHeading.astro';
+import { StudioAccessButton } from '@/components/ui/StudioAccessButton';
+import { ForwardChainingDemo } from '@/components/interactive/ForwardChainingDemo';
+import { FaqAccordion, type FaqItem } from '@/components/interactive/FaqAccordion';
+import { SITE_CONFIG } from '@/config/site';
+import {
+  GitBranch,
+  GraduationCap,
+  Layers,
+  ShieldAlert,
+  Sparkles,
+  Workflow,
+} from 'lucide-react';
+
+const faqs: FaqItem[] = [
+  {
+    question: '¿Qué es exactamente ExpertEdu Studio?',
+    answer:
+      'Es una plataforma web educativa de apoyo docente para la enseñanza de Sistemas Expertos. Permite modelar bases de conocimiento de forma visual y tabular, validar inconsistencias lógicas y ejecutar simulaciones paso a paso con encadenamiento hacia adelante (Forward Chaining).',
+  },
+  {
+    question: '¿Los estudiantes necesitan instalar algún programa en sus computadoras?',
+    answer:
+      'No. ExpertEdu Studio funciona directamente desde navegadores web modernos, evitando configuraciones complejas de consolas o compiladores en laboratorios universitarios.',
+  },
+  {
+    question: '¿La animación de esta página ejecuta el motor real del producto?',
+    answer:
+      'No. La presentación interactiva incluida en esta página tiene una finalidad exclusivamente ilustrativa para explicar el ciclo de Forward Chaining. La ejecución real de bases de conocimiento se realiza dentro de la plataforma ExpertEdu Studio.',
+  },
+  {
+    question: '¿Cómo protege el docente las bases de conocimiento en prácticas evaluadas?',
+    answer:
+      'Al publicar una actividad, la plataforma genera copias independientes para cada estudiante a partir de la plantilla docente, manteniendo la trazabilidad de entregas y evitando modificaciones sobre el ejercicio original.',
+  },
+];
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: SITE_CONFIG.productName,
+  applicationCategory: 'EducationalApplication',
+  operatingSystem: 'Web',
+  description:
+    'Plataforma educativa interactiva de apoyo docente para la enseñanza de Sistemas Expertos con editor visual, validación estática y motor Forward Chaining.',
+  provider: {
+    '@type': 'Organization',
+    name: SITE_CONFIG.legalName,
+  },
+};
+---
+
+<BaseLayout
+  title="ExpertEdu Studio — Plataforma para la enseñanza de Sistemas Expertos"
+  description="Descubre ExpertEdu Studio: editor visual interactivo de bases de conocimiento, motor de inferencia Forward Chaining paso a paso, validación estática y gestión académica."
+  structuredData={softwareSchema}
+>
+  <!-- Hero del producto -->
+  <section class="border-b border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp grid items-center gap-10 lg:grid-cols-12">
+      <div class="lg:col-span-7">
+        <span class="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-white px-3.5 py-1 text-xs font-semibold text-brand-primary">
+          Producto principal de ExpertEdu Solutions S.R.L.
+        </span>
+        <h1 class="mt-4 font-display text-4xl font-bold tracking-tight text-brand-graphite sm:text-5xl">
+          ExpertEdu Studio
+        </h1>
+        <p class="mt-4 text-base leading-relaxed text-brand-slate sm:text-lg">
+          Plataforma educativa interactiva de apoyo docente para la enseñanza de Sistemas Expertos.
+          Diseña bases de conocimiento en un lienzo visual, detecta errores lógicos antes de
+          ejecutar y visualiza el razonamiento Forward Chaining paso a paso.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+          <StudioAccessButton client:load fallbackLabel="Solicitar demostración" />
+          <a
+            href="/precios"
+            class="inline-flex items-center rounded-lg border border-brand-border bg-white px-5 py-3 text-sm font-semibold text-brand-graphite hover:bg-slate-50"
+          >
+            Ver planes referenciales
+          </a>
+        </div>
+      </div>
+
+      <!-- Visual representation of the 5-node knowledge editor -->
+      <div class="lg:col-span-5">
+        <div class="rounded-2xl border border-brand-border bg-white p-6 shadow-xs">
+          <p class="text-xs font-semibold uppercase tracking-wider text-brand-muted">
+            Arquitectura del Editor Visual
+          </p>
+          <p class="mt-1 text-xs text-brand-slate">
+            Representación estructurada mediante cinco tipos de nodos conectados:
+          </p>
+          <div class="mt-4 grid grid-cols-2 gap-2.5 text-xs">
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+              <span class="font-semibold text-brand-accent-dark">Hecho</span>
+              <p class="mt-0.5 text-brand-slate">Inicial o derivado</p>
+            </div>
+            <div class="rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+              <span class="font-semibold text-brand-primary">Variable</span>
+              <p class="mt-0.5 text-brand-slate">Texto, entero, decimal, booleano</p>
+            </div>
+            <div class="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+              <span class="font-semibold text-amber-800">Condición</span>
+              <p class="mt-0.5 text-brand-slate">Operadores relacionales</p>
+            </div>
+            <div class="rounded-lg border border-slate-300 bg-slate-100 p-3">
+              <span class="font-semibold text-brand-graphite">Regla (IF-THEN)</span>
+              <p class="mt-0.5 text-brand-slate">Prioridad y certeza</p>
+            </div>
+          </div>
+          <div class="mt-2.5 rounded-lg border border-indigo-200 bg-indigo-50/60 p-3 text-xs">
+            <span class="font-semibold text-indigo-900">Conclusión</span>
+            <p class="mt-0.5 text-brand-slate">
+              Asigna el resultado deducido en la memoria de trabajo y alimenta la trazabilidad.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problema educativo abordado -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Problema educativo"
+        title="Superando la brecha entre la teoría formal y la práctica en aula"
+        subtitle="Tradicionalmente, la enseñanza de Sistemas Expertos se apoya en pizarras estáticas o consolas textuales donde resulta difícil seguir el estado de la memoria de trabajo y detectar contradicciones."
+      />
+
+      <div class="mt-10 grid gap-6 md:grid-cols-2">
+        <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+          <h3 class="font-display text-lg font-bold text-brand-graphite">Desafío tradicional</h3>
+          <ul class="mt-4 space-y-2.5 text-sm text-brand-slate">
+            <li>• Diagramas manuales en pizarra difíciles de reutilizar y actualizar.</li>
+            <li>• Sintaxis de consola que desvía la atención del razonamiento lógico.</li>
+            <li>• Revisión manual de reglas duplicadas, ciclos o contradicciones.</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-brand-primary/25 bg-white p-6">
+          <h3 class="font-display text-lg font-bold text-brand-primary">
+            Enfoque con ExpertEdu Studio
+          </h3>
+          <ul class="mt-4 space-y-2.5 text-sm text-brand-slate">
+            <li>• Modelado visual drag-and-drop y vista tabular sincronizada.</li>
+            <li>• Simulación paso a paso con estados claros de evaluación y disparo.</li>
+            <li>• Validación estática previa y trazabilidad explicable para cada conclusión.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Presentación técnica interactiva -->
+  <section class="border-y border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Motor Forward Chaining"
+        title="Visualización del proceso de razonamiento"
+        subtitle="Recorre paso a paso cómo se evalúan condiciones, se resuelven conflictos y se generan nuevos hechos en memoria."
+      />
+      <div class="mt-10">
+        <ForwardChainingDemo client:visible />
+      </div>
+    </div>
+  </section>
+
+  <!-- Módulos clave -->
+  <section class="py-16 sm:py-20">
+    <div class="container-corp">
+      <SectionHeading
+        eyebrow="Capacidades documentadas"
+        title="Módulos integrados en la plataforma"
+      />
+
+      <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <article class="rounded-2xl border border-brand-border bg-white p-6">
+          <Workflow className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+          <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+            Editor visual y gestión de conocimiento
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+            Creación de bases de conocimiento con hechos, variables tipadas, condiciones
+            relacionales, reglas con prioridad numérica y factor de certeza.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-brand-border bg-white p-6">
+          <ShieldAlert className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+          <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+            Validación estática de consistencia
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+            Auditoría previa a la ejecución para detectar reglas duplicadas, contradictorias,
+            referencias huérfanas, reglas incompletas y dependencias circulares directas.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-brand-border bg-white p-6">
+          <GitBranch className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+          <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+            Trazabilidad y explicabilidad
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+            Registro causal de qué hechos activaron cada regla, qué condiciones fallaron y por qué
+            se seleccionó una regla dentro del conjunto de conflicto.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-brand-border bg-white p-6">
+          <GraduationCap className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+          <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+            Actividades para docentes y estudiantes
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+            Creación de cursos con código de invitación, publicación de prácticas con clonación
+            aislada por estudiante y calificación con retroalimentación.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-brand-border bg-white p-6">
+          <Layers className="h-6 w-6 text-brand-primary" aria-hidden="true" />
+          <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+            Beneficios académicos verificables
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+            Estandariza la preparación de ejercicios, mejora la comprensión del estudiante en aula y
+            facilita la revisión ordenada de entregas.
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-dashed border-brand-primary/40 bg-brand-surface p-6">
+          <div class="flex items-center justify-between gap-2">
+            <Sparkles className="h-6 w-6 text-brand-accent-dark" aria-hidden="true" />
+            <span class="rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+              En evolución / Próximas mejoras
+            </span>
+          </div>
+          <h3 class="mt-4 font-display text-lg font-bold text-brand-graphite">
+            Asistencia mediante IA y capacidades ampliadas
+          </h3>
+          <p class="mt-2 text-sm leading-relaxed text-brand-slate">
+            Funciones complementarias de asistencia pedagógica con IA supervisada por el docente y
+            soporte ampliado de estrategias de inferencia según hoja de ruta del producto.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="border-t border-brand-border bg-brand-surface py-16 sm:py-20">
+    <div class="container-corp max-w-4xl">
+      <SectionHeading
+        eyebrow="Preguntas frecuentes"
+        title="Dudas habituales sobre ExpertEdu Studio"
+        align="center"
+      />
+      <div class="mt-10">
+        <FaqAccordion client:visible items={faqs} />
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="bg-brand-graphite py-14 text-white">
+    <div class="container-corp flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+      <div>
+        <h2 class="font-display text-2xl font-bold sm:text-3xl">
+          ¿Deseas conocer ExpertEdu Studio en acción?
+        </h2>
+        <p class="mt-2 text-sm text-slate-300">
+          Coordina una demostración guiada para tu cátedra o equipo académico.
+        </p>
+      </div>
+      <StudioAccessButton client:load variant="primary" fallbackLabel="Solicitar demostración" />
+    </div>
+  </section>
+</BaseLayout>
