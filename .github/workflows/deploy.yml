@@ -1,6 +1,10 @@
-name: Manual Deploy to AWS EC2
+name: Deploy to AWS EC2
 
 on:
+  workflow_run:
+    workflows: ["CI Validation"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -14,8 +18,9 @@ on:
 
 jobs:
   deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'production' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,4 +36,6 @@ jobs:
             git pull --ff-only origin main
             docker compose -f docker-compose.prod.yml build --pull
             docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml exec -T nginx nginx -t
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps nginx
             docker image prune -f

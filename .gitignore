@@ -1,18 +1,18 @@
-# Environment files
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
 .env
 .env.*
 !.env.example
-
-# Database backups
+dist/
+.astro/
+.wrangler/
+.pytest_cache/
+staticfiles/
+playwright-report/
+test-results/
 backups/
-*.sql
-*.sql.gz
-
-# Logs
-*.log
-
-# OS & Editors
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+*.pem
+*.key

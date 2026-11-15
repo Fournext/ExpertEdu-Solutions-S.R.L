@@ -35,8 +35,10 @@ export const SITE_CONFIG = {
     addressNote: 'Santa Cruz de la Sierra, Bolivia (Atención previa coordinación)',
   },
   contact: {
-    commercialEmail: 'contacto@expertedu.bo',
-    supportEmail: 'soporte@expertedu.bo',
+    commercialEmail:
+      import.meta.env.PUBLIC_COMMERCIAL_EMAIL || 'contacto@expertedu.bo',
+    supportEmail:
+      import.meta.env.PUBLIC_SUPPORT_EMAIL || 'soporte@expertedu.bo',
     phone: '', // Configurar únicamente cuando exista una línea corporativa habilitada
   },
   social: {

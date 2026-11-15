@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionHeading from '../components/ui/SectionHeading.astro';
 import { ResourcesExplorer, type ResourceSummary } from '../components/interactive/ResourcesExplorer';
 import { FaqAccordion, type FaqItem } from '../components/interactive/FaqAccordion';
+import { SITE_CONFIG } from '../config/site';
 
 const entries = (await getCollection('recursos')).sort((a, b) =>
   b.data.publishedAt.localeCompare(a.data.publishedAt),
@@ -36,8 +37,7 @@ const RECURSOS_FAQS: FaqItem[] = [
   },
   {
     question: '¿Dónde reporto una duda técnica sobre la plataforma?',
-    answer:
-      'Si ya utiliza ExpertEdu Studio o requiere asistencia técnica específica, puede registrar un ticket desde nuestra página de soporte o escribir a soporte@expertedu.bo.',
+    answer: `Si ya utiliza ExpertEdu Studio o requiere asistencia técnica específica, puede registrar un ticket desde nuestra página de soporte o escribir a ${SITE_CONFIG.contact.supportEmail}.`,
   },
 ];
 ---

@@ -67,3 +67,14 @@ docker compose up --build
 ```
 
 La aplicación quedará disponible en `http://localhost:8080`.
+
+## Producción con HTTPS
+
+El dominio oficial es `https://expertedu.fournext.website`.
+Producción usa `docker-compose.prod.yml` y `nginx/expertedu.conf`, con
+redirección HTTP a HTTPS y certificados Let's Encrypt del servidor.
+El entorno local usa `nginx/local.conf` sin certificados.
+
+Consultar [la guía de despliegue y renovación](docs/DESPLIEGUE_EC2.md)
+antes de instalar o actualizar. Los valores reales de `.env` se mantienen
+en el servidor; `.env.example` incluye la configuración de Resend.
