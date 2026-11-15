@@ -5,12 +5,14 @@ import { EXPERTEDU_STUDIO_URL, hasConfiguredStudioUrl } from '@/config/site';
 interface StudioAccessButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
   className?: string;
+  configuredLabel?: string;
   fallbackLabel?: string;
 }
 
 export const StudioAccessButton: React.FC<StudioAccessButtonProps> = ({
   variant = 'primary',
   className = '',
+  configuredLabel = 'Ver web demo',
   fallbackLabel = 'Solicitar demostración',
 }) => {
   const configured = hasConfiguredStudioUrl();
@@ -32,7 +34,7 @@ export const StudioAccessButton: React.FC<StudioAccessButtonProps> = ({
         rel="noopener noreferrer"
         className={`${baseStyles} ${variantStyles} ${className}`}
       >
-        Acceder a la plataforma
+        {configuredLabel}
         <ExternalLink className="h-4 w-4" aria-hidden="true" />
       </a>
     );
