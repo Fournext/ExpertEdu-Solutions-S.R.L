@@ -125,6 +125,32 @@ def send_verification_code_email(email: str, code: str) -> bool:
         return False
 
 
+def send_password_reset_code_email(email: str, code: str) -> bool:
+    """Send a temporary 6-digit password reset code to an existing customer."""
+    minutes = getattr(settings, "OTP_EXPIRY_MINUTES", 10)
+    subject = "[ExpertEdu] Código para restablecer tu contraseña"
+    body = (
+        f"Hola,\n\n"
+        f"Recibimos una solicitud para restablecer la contraseña de tu cuenta en ExpertEdu.\n"
+        f"Tu código temporal de recuperación es:\n\n"
+        f"    {code}\n\n"
+        f"Este código expira en {minutes} minutos. "
+        f"Si no solicitaste este cambio, ignora este correo.\n"
+    )
+    try:
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to send password reset code to %s", email)
+        return False
+
+
 def provision_user_in_studio(user, role_code: str) -> dict:
     """
     Call ExpertEdu Studio internal provisioning API to create/sync the user
@@ -144,6 +170,7 @@ def provision_user_in_studio(user, role_code: str) -> dict:
             "email": user.email,
             "nombre_completo": full_name,
             "rol": studio_role,
+            "password_hash": user.password,
         }
     ).encode("utf-8")
 

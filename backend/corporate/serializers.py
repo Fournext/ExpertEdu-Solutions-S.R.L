@@ -424,3 +424,59 @@ class StudioEnrollSerializer(serializers.Serializer):
 
 class InboxStatusUpdateSerializer(serializers.Serializer):
     status = serializers.CharField(max_length=20)
+
+
+class PasswordResetSendCodeSerializer(serializers.Serializer):
+    """Validates email for password recovery OTP dispatch."""
+
+    email = serializers.EmailField(max_length=180)
+
+    def validate_email(self, value: str) -> str:
+        return value.strip().lower()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Validates OTP code and new password for password recovery."""
+
+    email = serializers.EmailField(max_length=180)
+    code = serializers.RegexField(regex=r"^\d{6}$", max_length=6, min_length=6)
+    new_password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+    confirm_password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        code = attrs["code"].strip()
+
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError(
+                {"confirm_password": "Las contraseñas no coinciden."}
+            )
+
+        user = User.objects.filter(email__iexact=email, is_active=True).first()
+        if not user:
+            raise serializers.ValidationError(
+                {"code": "Código inválido o usuario no encontrado."}
+            )
+
+        record = (
+            EmailVerificationCode.objects.filter(email__iexact=email)
+            .order_by("-created_at")
+            .first()
+        )
+        if not record or record.is_expired():
+            raise serializers.ValidationError(
+                {"code": "El código temporal ha expirado. Solicita uno nuevo."}
+            )
+        if record.attempts >= 5:
+            raise serializers.ValidationError(
+                {"code": "Se superó el número máximo de intentos. Solicita un código nuevo."}
+            )
+        if record.code != code:
+            record.attempts += 1
+            record.save(update_fields=["attempts"])
+            raise serializers.ValidationError({"code": "El código ingresado es incorrecto."})
+
+        record.is_verified = True
+        record.save(update_fields=["is_verified"])
+        attrs["user"] = user
+        return attrs

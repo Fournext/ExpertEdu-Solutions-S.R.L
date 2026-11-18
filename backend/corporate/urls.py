@@ -9,6 +9,8 @@ from .views import (
     CustomerMeView,
     CustomerRegisterView,
     HealthCheckView,
+    PasswordResetConfirmView,
+    PasswordResetSendCodeView,
     SendVerificationCodeView,
     StudioEnrollView,
     StudioLaunchView,
@@ -38,6 +40,16 @@ urlpatterns = [
     path("auth/verify-code/", VerifyEmailCodeView.as_view(), name="api-auth-verify-code"),
     path("auth/register/", CustomerRegisterView.as_view(), name="api-auth-register"),
     path("auth/login/", CustomerLoginView.as_view(), name="api-auth-login"),
+    path(
+        "auth/password-reset/send-code/",
+        PasswordResetSendCodeView.as_view(),
+        name="api-auth-password-reset-send",
+    ),
+    path(
+        "auth/password-reset/confirm/",
+        PasswordResetConfirmView.as_view(),
+        name="api-auth-password-reset-confirm",
+    ),
     path("auth/logout/", CustomerLogoutView.as_view(), name="api-auth-logout"),
     path("auth/me/", CustomerMeView.as_view(), name="api-auth-me"),
     # Product Enrollment & SSO (ExpertEdu Studio)

@@ -28,6 +28,8 @@ from .serializers import (
     DuplicateSubmissionError,
     HoneypotSpamError,
     InboxStatusUpdateSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetSendCodeSerializer,
     SendVerificationCodeSerializer,
     StudioEnrollSerializer,
     SupportTicketPublicStatusSerializer,
@@ -38,6 +40,7 @@ from .services import (
     hash_client_ip,
     provision_user_in_studio,
     send_contact_notification,
+    send_password_reset_code_email,
     send_support_notification,
     send_verification_code_email,
 )
@@ -658,4 +661,77 @@ class SuperAdminInboxStatusView(APIView):
         return Response(
             {"success": False, "message": "Tipo de buzón inválido."},
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class PasswordResetSendCodeView(APIView):
+    """Sends a 6-digit password reset code if an active account exists."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ContactRateThrottle]
+
+    def post(self, request) -> Response:
+        serializer = PasswordResetSendCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        user = User.objects.filter(email__iexact=email, is_active=True).first()
+        if user:
+            code = f"{secrets.randbelow(900000) + 100000}"
+            expiry_minutes = getattr(settings, "OTP_EXPIRY_MINUTES", 10)
+            EmailVerificationCode.objects.create(
+                email=email,
+                code=code,
+                expires_at=timezone.now() + timedelta(minutes=expiry_minutes),
+            )
+            send_password_reset_code_email(email, code)
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Si el correo está registrado, enviamos un código temporal "
+                    "para restablecer tu contraseña."
+                ),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    """Resets password after OTP verification and syncs hash to Studio if enrolled."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ContactRateThrottle]
+
+    def post(self, request) -> Response:
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        new_password = serializer.validated_data["new_password"]
+
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+        CorporateSessionToken.objects.filter(user=user).delete()
+
+        membership = CustomerProductMembership.objects.filter(
+            user=user,
+            product_code=CustomerProductMembership.ProductCode.EXPERTEDU_STUDIO,
+            is_active=True,
+        ).first()
+        if membership:
+            try:
+                provision_user_in_studio(user, membership.role)
+            except RuntimeError:
+                pass
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Contraseña actualizada correctamente. "
+                    "Ya puedes iniciar sesión con tu nueva contraseña."
+                ),
+            },
+            status=status.HTTP_200_OK,
         )

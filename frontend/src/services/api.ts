@@ -268,6 +268,25 @@ export function loginCustomer(identifier: string, password: string) {
   }>('/auth/login/', { method: 'POST', body: { identifier, password } });
 }
 
+export function sendPasswordResetCode(email: string) {
+  return requestAuthJson<{ success: boolean; message: string }>(
+    '/auth/password-reset/send-code/',
+    { method: 'POST', body: { email } },
+  );
+}
+
+export function confirmPasswordReset(payload: {
+  email: string;
+  code: string;
+  new_password: string;
+  confirm_password: string;
+}) {
+  return requestAuthJson<{ success: boolean; message: string }>(
+    '/auth/password-reset/confirm/',
+    { method: 'POST', body: payload },
+  );
+}
+
 export function logoutCustomer() {
   return requestAuthJson<{ success: boolean; message: string }>('/auth/logout/', {
     method: 'POST',

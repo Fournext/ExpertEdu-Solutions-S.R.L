@@ -9,9 +9,11 @@ import {
   UserPlus,
 } from 'lucide-react';
 import {
+  confirmPasswordReset,
   loginCustomer,
   registerCustomer,
   saveStoredSession,
+  sendPasswordResetCode,
   sendVerificationCode,
   verifyEmailCode,
   type ApiErrorResult,
@@ -99,12 +101,17 @@ export const LoginForm: React.FC = () => {
         {loading ? 'Ingresando...' : 'Iniciar sesión'}
       </button>
 
-      <p className="text-center text-xs text-brand-slate">
-        ¿Aún no tienes cuenta?{' '}
-        <a href="/registro" className="font-semibold text-brand-primary hover:underline">
-          Regístrate aquí
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-slate">
+        <a href="/recuperar-contrasena" className="font-semibold text-brand-primary hover:underline">
+          ¿Olvidaste tu contraseña?
         </a>
-      </p>
+        <span>
+          ¿Sin cuenta?{' '}
+          <a href="/registro" className="font-semibold text-brand-primary hover:underline">
+            Regístrate aquí
+          </a>
+        </span>
+      </div>
     </form>
   );
 };
@@ -462,6 +469,190 @@ export const RegisterForm: React.FC = () => {
           {busy === 'register' ? 'Creando cuenta...' : 'Crear cuenta en ExpertEdu'}
         </button>
       </fieldset>
+    </form>
+  );
+};
+
+export const PasswordResetForm: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [busy, setBusy] = useState<'send' | 'confirm' | null>(null);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleSend = async () => {
+    const clean = email.trim().toLowerCase();
+    if (!clean || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      setError('Ingresa un correo electrónico válido.');
+      return;
+    }
+    setError('');
+    setSuccessMsg('');
+    setBusy('send');
+    try {
+      const res = await sendPasswordResetCode(clean);
+      setCodeSent(true);
+      setSuccessMsg(res.message);
+    } catch (err) {
+      const apiErr = err as ApiErrorResult;
+      setError(apiErr.message || 'No se pudo enviar el código de recuperación.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code.trim())) {
+      setError('Ingresa el código de 6 dígitos enviado a tu correo.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+    setError('');
+    setSuccessMsg('');
+    setBusy('confirm');
+    try {
+      const res = await confirmPasswordReset({
+        email: email.trim().toLowerCase(),
+        code: code.trim(),
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
+      setSuccessMsg(res.message);
+    } catch (err) {
+      const apiErr = err as ApiErrorResult;
+      setError(apiErr.message || 'No se pudo restablecer la contraseña.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <form onSubmit={handleConfirm} className="space-y-5" noValidate>
+      {error && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {successMsg && (
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"
+        >
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-emerald" aria-hidden="true" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <label htmlFor="reset-email" className="block text-sm font-medium text-brand-graphite">
+            Correo electrónico de tu cuenta
+          </label>
+          <input
+            id="reset-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="correo@institucion.edu.bo"
+            className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={busy === 'send'}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-graphite px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+        >
+          <Send className="h-4 w-4" aria-hidden="true" />
+          {busy === 'send' ? 'Enviando...' : codeSent ? 'Reenviar código' : 'Enviar código'}
+        </button>
+      </div>
+
+      {codeSent && (
+        <div className="space-y-4 border-t border-brand-border pt-4">
+          <div>
+            <label htmlFor="reset-code" className="block text-sm font-medium text-brand-graphite">
+              Código temporal (6 dígitos)
+            </label>
+            <input
+              id="reset-code"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Ej. 482910"
+              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm font-mono tracking-widest text-brand-graphite"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="reset-password"
+                className="block text-sm font-medium text-brand-graphite"
+              >
+                Nueva contraseña (mín. 8 caracteres)
+              </label>
+              <input
+                id="reset-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="reset-confirm"
+                className="block text-sm font-medium text-brand-graphite"
+              >
+                Confirmar contraseña
+              </label>
+              <input
+                id="reset-confirm"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={busy === 'confirm'}
+            className="w-full rounded-lg bg-brand-primary px-5 py-3 text-sm font-semibold text-white hover:bg-brand-primary-hover disabled:opacity-60"
+          >
+            {busy === 'confirm' ? 'Actualizando...' : 'Guardar nueva contraseña'}
+          </button>
+        </div>
+      )}
+
+      <p className="text-center text-xs text-brand-slate">
+        <a href="/login" className="font-semibold text-brand-primary hover:underline">
+          Volver a iniciar sesión
+        </a>
+      </p>
     </form>
   );
 };
