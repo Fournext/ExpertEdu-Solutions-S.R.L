@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { EXPERTEDU_STUDIO_URL, hasConfiguredStudioUrl } from '@/config/site';
+import { getStoredSession } from '@/services/api';
 
 interface StudioAccessButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
@@ -16,6 +17,14 @@ export const StudioAccessButton: React.FC<StudioAccessButtonProps> = ({
   fallbackLabel = 'Solicitar demostración',
 }) => {
   const configured = hasConfiguredStudioUrl();
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setHasSession(Boolean(getStoredSession()));
+    sync();
+    window.addEventListener('expertedu-auth-change', sync);
+    return () => window.removeEventListener('expertedu-auth-change', sync);
+  }, []);
 
   const baseStyles =
     'inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold transition-colors';
@@ -25,6 +34,18 @@ export const StudioAccessButton: React.FC<StudioAccessButtonProps> = ({
     outline:
       'border border-brand-border bg-white text-brand-graphite hover:bg-slate-50',
   }[variant];
+
+  if (hasSession) {
+    return (
+      <a
+        href="/mi-cuenta?producto=expertedu-studio"
+        className={`${baseStyles} ${variantStyles} ${className}`}
+      >
+        Ir a ExpertEdu Studio
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </a>
+    );
+  }
 
   if (configured) {
     return (

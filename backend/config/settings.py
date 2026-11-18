@@ -104,8 +104,8 @@ CORS_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
-CORS_ALLOW_METHODS = ["GET", "POST", "OPTIONS"]
-CORS_ALLOW_HEADERS = ["content-type", "accept", "origin"]
+CORS_ALLOW_METHODS = ["GET", "POST", "PATCH", "OPTIONS"]
+CORS_ALLOW_HEADERS = ["content-type", "accept", "origin", "authorization"]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
@@ -114,6 +114,9 @@ CSRF_TRUSTED_ORIGINS = [
 
 # DRF Configuration
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "corporate.authentication.CorporateBearerAuthentication",
+    ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
@@ -142,6 +145,20 @@ CONTACT_NOTIFICATION_EMAIL = os.getenv(
 )
 SUPPORT_NOTIFICATION_EMAIL = os.getenv(
     "SUPPORT_NOTIFICATION_EMAIL", "soporte@expertedu.bo"
+)
+
+# Customer Auth, OTP & ExpertEdu Studio SSO Integration
+OTP_EXPIRY_MINUTES = int(os.getenv("OTP_EXPIRY_MINUTES", "10"))
+CORPORATE_SESSION_DAYS = int(os.getenv("CORPORATE_SESSION_DAYS", "7"))
+STUDIO_API_BASE_URL = os.getenv(
+    "STUDIO_API_BASE_URL", "http://localhost:8001/api/v1"
+).rstrip("/")
+STUDIO_PUBLIC_URL = os.getenv(
+    "STUDIO_PUBLIC_URL",
+    os.getenv("PUBLIC_EXPERTEDU_STUDIO_URL", "http://localhost:5173"),
+).rstrip("/")
+STUDIO_SERVICE_KEY = os.getenv(
+    "STUDIO_SERVICE_KEY", "expertedu-studio-sso-dev-key"
 )
 
 # Security Headers

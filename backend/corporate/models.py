@@ -3,6 +3,7 @@
 import secrets
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -53,6 +54,7 @@ class ContactInquiry(models.Model):
         default=Status.NEW,
         db_index=True,
     )
+    target_inbox = models.EmailField(max_length=180, blank=True, default="")
     ip_hash = models.CharField(max_length=64, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -129,6 +131,7 @@ class SupportTicket(models.Model):
         default=Status.OPEN,
         db_index=True,
     )
+    target_inbox = models.EmailField(max_length=180, blank=True, default="")
     ip_hash = models.CharField(max_length=64, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -140,3 +143,132 @@ class SupportTicket(models.Model):
 
     def __str__(self) -> str:
         return f"{self.reference_code} ({self.get_status_display()}) - {self.subject}"
+
+
+class EmailVerificationCode(models.Model):
+    """Stores temporary 6-digit OTP codes required before customer registration."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(max_length=180, db_index=True)
+    code = models.CharField(max_length=6)
+    verification_token = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
+    is_verified = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Código de verificación"
+        verbose_name_plural = "Códigos de verificación"
+
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
+
+
+class CustomerProfile(models.Model):
+    """Stores corporate customer profile and mandatory legal acceptances."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="customer_profile",
+    )
+    full_name = models.CharField(max_length=150)
+    organization = models.CharField(max_length=160, blank=True, default="")
+    email_verified = models.BooleanField(default=False)
+    privacy_accepted = models.BooleanField(default=False)
+    privacy_accepted_at = models.DateTimeField(null=True, blank=True)
+    terms_accepted = models.BooleanField(default=False)
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Perfil de cliente"
+        verbose_name_plural = "Perfiles de clientes"
+
+    def __str__(self) -> str:
+        return f"{self.full_name} ({self.user.email})"
+
+
+class CustomerProductMembership(models.Model):
+    """Tracks which ExpertEdu products, plans, and roles a customer uses."""
+
+    class ProductCode(models.TextChoices):
+        EXPERTEDU_STUDIO = "EXPERTEDU_STUDIO", "ExpertEdu Studio"
+
+    class StudioRole(models.TextChoices):
+        DOCENTE = "DOCENTE", "Docente"
+        ESTUDIANTE = "ESTUDIANTE", "Estudiante"
+
+    class PlanCode(models.TextChoices):
+        ESTUDIANTE = "ESTUDIANTE", "Plan Estudiante"
+        DOCENTE_INDIVIDUAL = "DOCENTE_INDIVIDUAL", "Plan Docente Individual"
+        INSTITUCIONAL = "INSTITUCIONAL", "Licencia Institucional"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="product_memberships",
+    )
+    product_code = models.CharField(
+        max_length=40,
+        choices=ProductCode.choices,
+        default=ProductCode.EXPERTEDU_STUDIO,
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=StudioRole.choices,
+    )
+    plan_code = models.CharField(
+        max_length=32,
+        choices=PlanCode.choices,
+        default=PlanCode.ESTUDIANTE,
+    )
+    studio_user_id = models.CharField(max_length=64, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "product_code")
+        ordering = ["-enrolled_at"]
+        verbose_name = "Membresía de producto"
+        verbose_name_plural = "Membresías de productos"
+
+    def __str__(self) -> str:
+        return (
+            f"{self.user.username} - {self.get_product_code_display()} "
+            f"[{self.get_role_display()} / {self.get_plan_code_display()}]"
+        )
+
+
+class CorporateSessionToken(models.Model):
+    """Bearer session token for the corporate portal."""
+
+    key = models.CharField(max_length=80, primary_key=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="corporate_tokens",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    @classmethod
+    def issue_for_user(cls, user) -> "CorporateSessionToken":
+        days = getattr(settings, "CORPORATE_SESSION_DAYS", 7)
+        return cls.objects.create(
+            key=secrets.token_urlsafe(36),
+            user=user,
+            expires_at=timezone.now() + timezone.timedelta(days=days),
+        )
+
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at

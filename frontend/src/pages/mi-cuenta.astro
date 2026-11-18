@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { CustomerDashboard } from '../components/interactive/CustomerDashboard';
+---
+
+<BaseLayout
+  title="Mi cuenta y productos | ExpertEdu"
+  description="Consulta tus productos activos, planes, roles y accede a ExpertEdu Studio con tu sesión corporativa."
+  canonicalPath="/mi-cuenta"
+  noindex={true}
+>
+  <section class="border-b border-brand-border bg-brand-surface py-12 sm:py-16">
+    <div class="container-corp">
+      <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+        Panel de cliente
+      </p>
+      <h1 class="mt-2 font-display text-3xl font-bold tracking-tight text-brand-graphite sm:text-4xl">
+        Mi cuenta y suscripciones
+      </h1>
+    </div>
+  </section>
+
+  <section class="py-12 sm:py-16">
+    <div class="container-corp">
+      <CustomerDashboard client:load />
+    </div>
+  </section>
+</BaseLayout>

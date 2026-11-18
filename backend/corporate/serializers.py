@@ -3,10 +3,19 @@
 import re
 from datetime import timedelta
 
+from django.contrib.auth import authenticate, get_user_model
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import ContactInquiry, SupportTicket
+from .models import (
+    ContactInquiry,
+    CustomerProductMembership,
+    CustomerProfile,
+    EmailVerificationCode,
+    SupportTicket,
+)
+
+User = get_user_model()
 
 DISPOSABLE_OR_INVALID_PATTERN = re.compile(r"[<>]")
 
@@ -207,3 +216,211 @@ class SupportTicketPublicStatusSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class SendVerificationCodeSerializer(serializers.Serializer):
+    """Validates email before dispatching a temporary 6-digit OTP code."""
+
+    email = serializers.EmailField(max_length=180)
+
+    def validate_email(self, value: str) -> str:
+        email = value.strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                "Ya existe una cuenta registrada con este correo electrónico."
+            )
+        return email
+
+
+class VerifyEmailCodeSerializer(serializers.Serializer):
+    """Validates the 6-digit OTP code entered by the registering customer."""
+
+    email = serializers.EmailField(max_length=180)
+    code = serializers.RegexField(regex=r"^\d{6}$", max_length=6, min_length=6)
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        code = attrs["code"].strip()
+
+        record = (
+            EmailVerificationCode.objects.filter(email__iexact=email)
+            .order_by("-created_at")
+            .first()
+        )
+        if not record:
+            raise serializers.ValidationError(
+                {"code": "No se ha solicitado un código para este correo."}
+            )
+        if record.is_expired():
+            raise serializers.ValidationError(
+                {"code": "El código temporal ha expirado. Solicita uno nuevo."}
+            )
+        if record.attempts >= 5:
+            raise serializers.ValidationError(
+                {"code": "Se superó el número máximo de intentos. Solicita un código nuevo."}
+            )
+        if record.code != code:
+            record.attempts += 1
+            record.save(update_fields=["attempts"])
+            raise serializers.ValidationError(
+                {"code": "El código ingresado es incorrecto."}
+            )
+
+        record.is_verified = True
+        record.save(update_fields=["is_verified"])
+        attrs["email"] = email
+        attrs["record"] = record
+        return attrs
+
+
+class CustomerRegisterSerializer(serializers.Serializer):
+    """Completes customer registration requiring verified OTP and 2 legal checks."""
+
+    email = serializers.EmailField(max_length=180)
+    verification_token = serializers.UUIDField()
+    username = serializers.RegexField(
+        regex=r"^[a-zA-Z0-9._-]{4,40}$",
+        max_length=40,
+        error_messages={
+            "invalid": (
+                "El usuario debe tener entre 4 y 40 caracteres "
+                "(letras, números, punto, guion o guion bajo)."
+            )
+        },
+    )
+    full_name = serializers.CharField(max_length=150)
+    organization = serializers.CharField(max_length=160, required=False, allow_blank=True)
+    password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+    confirm_password = serializers.CharField(write_only=True, min_length=8, max_length=128)
+    privacy_accepted = serializers.BooleanField()
+    terms_accepted = serializers.BooleanField()
+
+    def validate_username(self, value: str) -> str:
+        username = value.strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError("Este nombre de usuario ya está en uso.")
+        return username
+
+    def validate_full_name(self, value: str) -> str:
+        return validate_clean_text(value, "El nombre completo", 3)
+
+    def validate_organization(self, value: str) -> str:
+        cleaned = value.strip()
+        if cleaned and DISPOSABLE_OR_INVALID_PATTERN.search(cleaned):
+            raise serializers.ValidationError("La organización contiene caracteres no permitidos.")
+        return cleaned
+
+    def validate_privacy_accepted(self, value: bool) -> bool:
+        if not value:
+            raise serializers.ValidationError(
+                "Debes aceptar la Política de Privacidad para registrarte."
+            )
+        return value
+
+    def validate_terms_accepted(self, value: bool) -> bool:
+        if not value:
+            raise serializers.ValidationError(
+                "Debes aceptar los Términos y Condiciones de Uso para registrarte."
+            )
+        return value
+
+    def validate(self, attrs):
+        email = attrs["email"].strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError(
+                {"email": "Ya existe una cuenta registrada con este correo."}
+            )
+        if attrs["password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError(
+                {"confirm_password": "Las contraseñas no coinciden."}
+            )
+
+        otp = EmailVerificationCode.objects.filter(
+            email__iexact=email,
+            verification_token=attrs["verification_token"],
+            is_verified=True,
+        ).first()
+        if not otp or otp.is_expired():
+            raise serializers.ValidationError(
+                {"verification_token": "Debes verificar tu correo con el código temporal vigente."}
+            )
+
+        attrs["email"] = email
+        return attrs
+
+    def create(self, validated_data):
+        now = timezone.now()
+        user = User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+            is_active=True,
+        )
+        CustomerProfile.objects.create(
+            user=user,
+            full_name=validated_data["full_name"],
+            organization=validated_data.get("organization", ""),
+            email_verified=True,
+            privacy_accepted=True,
+            privacy_accepted_at=now,
+            terms_accepted=True,
+            terms_accepted_at=now,
+        )
+        return user
+
+
+class CustomerLoginSerializer(serializers.Serializer):
+    """Authenticates a corporate customer or superadmin by username or email."""
+
+    identifier = serializers.CharField(max_length=180)
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        identifier = attrs["identifier"].strip()
+        password = attrs["password"]
+
+        user = None
+        if "@" in identifier:
+            matched = User.objects.filter(email__iexact=identifier).first()
+            if matched:
+                user = authenticate(username=matched.username, password=password)
+        if not user:
+            user = authenticate(username=identifier, password=password)
+
+        if not user:
+            raise serializers.ValidationError("Credenciales inválidas.")
+        if not user.is_active:
+            raise serializers.ValidationError("Esta cuenta se encuentra desactivada.")
+
+        attrs["user"] = user
+        return attrs
+
+
+class CustomerMembershipSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="get_product_code_display", read_only=True)
+    role_label = serializers.CharField(source="get_role_display", read_only=True)
+    plan_name = serializers.CharField(source="get_plan_code_display", read_only=True)
+
+    class Meta:
+        model = CustomerProductMembership
+        fields = [
+            "id",
+            "product_code",
+            "product_name",
+            "role",
+            "role_label",
+            "plan_code",
+            "plan_name",
+            "is_active",
+            "enrolled_at",
+            "updated_at",
+        ]
+
+
+class StudioEnrollSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=CustomerProductMembership.StudioRole.choices)
+    plan_code = serializers.ChoiceField(choices=CustomerProductMembership.PlanCode.choices)
+
+
+class InboxStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.CharField(max_length=20)

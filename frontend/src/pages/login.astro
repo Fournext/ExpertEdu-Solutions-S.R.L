@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { LoginForm } from '../components/interactive/AuthForms';
+---
+
+<BaseLayout
+  title="Iniciar sesión | ExpertEdu"
+  description="Accede a tu cuenta corporativa de ExpertEdu para gestionar tus productos, planes y acceder a ExpertEdu Studio."
+  canonicalPath="/login"
+  noindex={true}
+>
+  <section class="py-16 sm:py-24">
+    <div class="mx-auto max-w-md px-4 sm:px-6">
+      <div class="rounded-2xl border border-brand-border bg-white p-6 shadow-sm sm:p-8">
+        <p class="text-xs font-semibold uppercase tracking-widest text-brand-primary">
+          Portal de clientes
+        </p>
+        <h1 class="mt-2 font-display text-3xl font-bold tracking-tight text-brand-graphite">
+          Iniciar sesión
+        </h1>
+        <p class="mt-2 text-sm text-brand-slate">
+          Ingresa con tu cuenta de ExpertEdu para acceder a tus productos y planes activos.
+        </p>
+        <div class="mt-6">
+          <LoginForm client:load />
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

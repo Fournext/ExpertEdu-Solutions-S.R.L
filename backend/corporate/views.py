@@ -1,26 +1,64 @@
 """REST API views for health, contact inquiries, and support tickets."""
 
+import secrets
+from datetime import timedelta
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import connection
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import SupportTicket
+from .models import (
+    ContactInquiry,
+    CorporateSessionToken,
+    CustomerProductMembership,
+    EmailVerificationCode,
+    SupportTicket,
+)
 from .serializers import (
     ContactInquirySerializer,
+    CustomerLoginSerializer,
+    CustomerMembershipSerializer,
+    CustomerRegisterSerializer,
     DuplicateSubmissionError,
     HoneypotSpamError,
+    InboxStatusUpdateSerializer,
+    SendVerificationCodeSerializer,
+    StudioEnrollSerializer,
     SupportTicketPublicStatusSerializer,
     SupportTicketSerializer,
+    VerifyEmailCodeSerializer,
 )
 from .services import (
     hash_client_ip,
+    provision_user_in_studio,
     send_contact_notification,
     send_support_notification,
+    send_verification_code_email,
 )
 from .throttling import ContactRateThrottle, SupportRateThrottle
+
+User = get_user_model()
+
+
+def _serialize_user_payload(user) -> dict:
+    profile = getattr(user, "customer_profile", None)
+    memberships = CustomerProductMembership.objects.filter(user=user, is_active=True)
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "full_name": profile.full_name if profile else (user.get_full_name() or user.username),
+        "organization": profile.organization if profile else "",
+        "email_verified": profile.email_verified if profile else bool(user.is_superuser),
+        "is_superadmin": bool(user.is_superuser),
+        "memberships": CustomerMembershipSerializer(memberships, many=True).data,
+    }
 
 
 class HealthCheckView(APIView):
@@ -79,7 +117,10 @@ class ContactInquiryCreateView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        inquiry = serializer.save(ip_hash=hash_client_ip(request))
+        inquiry = serializer.save(
+            ip_hash=hash_client_ip(request),
+            target_inbox=settings.CONTACT_NOTIFICATION_EMAIL,
+        )
         notified = send_contact_notification(inquiry)
 
         return Response(
@@ -127,7 +168,10 @@ class SupportTicketCreateView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        ticket = serializer.save(ip_hash=hash_client_ip(request))
+        ticket = serializer.save(
+            ip_hash=hash_client_ip(request),
+            target_inbox=settings.SUPPORT_NOTIFICATION_EMAIL,
+        )
         notified = send_support_notification(ticket)
 
         return Response(
@@ -187,4 +231,431 @@ class SupportTicketStatusView(APIView):
                 "data": SupportTicketPublicStatusSerializer(ticket).data,
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class SendVerificationCodeView(APIView):
+    """Generates and emails a 6-digit temporary verification code."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ContactRateThrottle]
+
+    def post(self, request) -> Response:
+        serializer = SendVerificationCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        code = f"{secrets.randbelow(900000) + 100000}"
+        expiry_minutes = getattr(settings, "OTP_EXPIRY_MINUTES", 10)
+        EmailVerificationCode.objects.create(
+            email=email,
+            code=code,
+            expires_at=timezone.now() + timedelta(minutes=expiry_minutes),
+        )
+        sent = send_verification_code_email(email, code)
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    f"Enviamos un código temporal a {email}. "
+                    f"Tiene una validez de {expiry_minutes} minutos."
+                ),
+                "data": {"email": email, "email_dispatched": sent},
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class VerifyEmailCodeView(APIView):
+    """Validates the 6-digit OTP code and returns verification_token."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ContactRateThrottle]
+
+    def post(self, request) -> Response:
+        serializer = VerifyEmailCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        record = serializer.validated_data["record"]
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    "Correo verificado correctamente. "
+                    "Ya puedes crear tu usuario y contraseña."
+                ),
+                "data": {
+                    "email": serializer.validated_data["email"],
+                    "verification_token": str(record.verification_token),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class CustomerRegisterView(APIView):
+    """Registers a new corporate customer after OTP verification and 2 legal checks."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request) -> Response:
+        serializer = CustomerRegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        token = CorporateSessionToken.issue_for_user(user)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Cuenta registrada correctamente.",
+                "data": {
+                    "token": token.key,
+                    "user": _serialize_user_payload(user),
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class CustomerLoginView(APIView):
+    """Logs in a corporate customer or superadmin and returns a session token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request) -> Response:
+        serializer = CustomerLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        token = CorporateSessionToken.issue_for_user(user)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Inicio de sesión exitoso.",
+                "data": {
+                    "token": token.key,
+                    "user": _serialize_user_payload(user),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class CustomerLogoutView(APIView):
+    """Invalidates the current corporate session token."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request) -> Response:
+        if isinstance(request.auth, CorporateSessionToken):
+            request.auth.delete()
+        return Response(
+            {"success": True, "message": "Sesión cerrada correctamente."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class CustomerMeView(APIView):
+    """Returns current user profile, memberships (product, plan, role), and superadmin flag."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        return Response(
+            {"success": True, "data": _serialize_user_payload(request.user)},
+            status=status.HTTP_200_OK,
+        )
+
+
+class StudioEnrollView(APIView):
+    """Enrolls/updates the customer in ExpertEdu Studio with chosen role and plan via Studio API."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request) -> Response:
+        serializer = StudioEnrollSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        role = serializer.validated_data["role"]
+        plan_code = serializer.validated_data["plan_code"]
+
+        try:
+            studio_result = provision_user_in_studio(request.user, role)
+        except RuntimeError as exc:
+            return Response(
+                {"success": False, "message": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        studio_user_id = str(studio_result["studio_user"].get("id", ""))
+        membership, _ = CustomerProductMembership.objects.update_or_create(
+            user=request.user,
+            product_code=CustomerProductMembership.ProductCode.EXPERTEDU_STUDIO,
+            defaults={
+                "role": role,
+                "plan_code": plan_code,
+                "studio_user_id": studio_user_id,
+                "is_active": True,
+            },
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    f"Cuenta activada en ExpertEdu Studio como "
+                    f"{membership.get_role_display()} ({membership.get_plan_code_display()})."
+                ),
+                "data": {
+                    "membership": CustomerMembershipSerializer(membership).data,
+                    "sso_url": studio_result["sso_url"],
+                    "user": _serialize_user_payload(request.user),
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class StudioLaunchView(APIView):
+    """Generates a fresh SSO launch URL for an already-enrolled ExpertEdu Studio customer."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request) -> Response:
+        membership = CustomerProductMembership.objects.filter(
+            user=request.user,
+            product_code=CustomerProductMembership.ProductCode.EXPERTEDU_STUDIO,
+            is_active=True,
+        ).first()
+        if not membership:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Primero debes elegir tu rol (Docente o Estudiante) y plan.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            studio_result = provision_user_in_studio(request.user, membership.role)
+        except RuntimeError as exc:
+            return Response(
+                {"success": False, "message": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "sso_url": studio_result["sso_url"],
+                    "membership": CustomerMembershipSerializer(membership).data,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+def _require_superadmin(request):
+    if not request.user or not request.user.is_superuser:
+        return Response(
+            {"success": False, "message": "Acceso restringido a superadministradores."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    return None
+
+
+class SuperAdminOverviewView(APIView):
+    """Returns KPIs by product, plan, and role plus the full customer/membership directory."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+
+        total_customers = User.objects.filter(is_superuser=False).count()
+        active_memberships = CustomerProductMembership.objects.filter(is_active=True)
+
+        by_product = list(
+            active_memberships.values("product_code").annotate(total=Count("id"))
+        )
+        by_plan = list(
+            active_memberships.values("plan_code").annotate(total=Count("id"))
+        )
+        by_role = list(
+            active_memberships.values("role").annotate(total=Count("id"))
+        )
+
+        customers_qs = (
+            User.objects.filter(is_superuser=False)
+            .select_related("customer_profile")
+            .prefetch_related("product_memberships")
+            .order_by("-date_joined")[:200]
+        )
+        customers = []
+        for u in customers_qs:
+            prof = getattr(u, "customer_profile", None)
+            memberships = [
+                CustomerMembershipSerializer(m).data
+                for m in u.product_memberships.all()
+            ]
+            customers.append(
+                {
+                    "id": u.id,
+                    "username": u.username,
+                    "email": u.email,
+                    "full_name": prof.full_name if prof else (u.get_full_name() or u.username),
+                    "organization": prof.organization if prof else "",
+                    "date_joined": u.date_joined.isoformat(),
+                    "memberships": memberships,
+                }
+            )
+
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "kpis": {
+                        "total_customers": total_customers,
+                        "total_active_subscriptions": active_memberships.count(),
+                        "by_product": by_product,
+                        "by_plan": by_plan,
+                        "by_role": by_role,
+                    },
+                    "customers": customers,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SuperAdminInboxView(APIView):
+    """Returns messages received in both corporate mailboxes (commercial + support)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+
+        commercial_items = [
+            {
+                "id": str(item.id),
+                "item_type": "contact",
+                "full_name": item.full_name,
+                "email": item.email,
+                "organization": item.organization,
+                "category": item.inquiry_type,
+                "category_label": item.get_inquiry_type_display(),
+                "subject": item.subject,
+                "body": item.message,
+                "status": item.status,
+                "status_label": item.get_status_display(),
+                "target_inbox": item.target_inbox or settings.CONTACT_NOTIFICATION_EMAIL,
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in ContactInquiry.objects.all()[:100]
+        ]
+
+        support_items = [
+            {
+                "id": str(item.id),
+                "item_type": "support",
+                "reference_code": item.reference_code,
+                "full_name": item.full_name,
+                "email": item.email,
+                "organization": item.organization,
+                "category": item.category,
+                "category_label": item.get_category_display(),
+                "severity": item.severity,
+                "support_level_label": item.get_support_level_display(),
+                "subject": item.subject,
+                "body": item.description,
+                "status": item.status,
+                "status_label": item.get_status_display(),
+                "target_inbox": item.target_inbox or settings.SUPPORT_NOTIFICATION_EMAIL,
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in SupportTicket.objects.all()[:100]
+        ]
+
+        return Response(
+            {
+                "success": True,
+                "data": {
+                    "mailboxes": {
+                        "commercial": settings.CONTACT_NOTIFICATION_EMAIL,
+                        "support": settings.SUPPORT_NOTIFICATION_EMAIL,
+                    },
+                    "commercial_messages": commercial_items,
+                    "support_messages": support_items,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SuperAdminInboxStatusView(APIView):
+    """Updates status for a contact inquiry or support ticket from Superadmin."""
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, item_type: str, item_id: str) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+
+        serializer = InboxStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        new_status = serializer.validated_data["status"]
+
+        if item_type == "contact":
+            valid = {choice[0] for choice in ContactInquiry.Status.choices}
+            if new_status not in valid:
+                return Response(
+                    {"success": False, "message": "Estado inválido para consulta."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            obj = ContactInquiry.objects.filter(id=item_id).first()
+            if not obj:
+                return Response(
+                    {"success": False, "message": "Mensaje no encontrado."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            obj.status = new_status
+            obj.save(update_fields=["status", "updated_at"])
+            return Response(
+                {
+                    "success": True,
+                    "data": {"id": str(obj.id), "status": obj.status},
+                }
+            )
+
+        if item_type == "support":
+            valid = {choice[0] for choice in SupportTicket.Status.choices}
+            if new_status not in valid:
+                return Response(
+                    {"success": False, "message": "Estado inválido para ticket."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            obj = SupportTicket.objects.filter(id=item_id).first()
+            if not obj:
+                return Response(
+                    {"success": False, "message": "Ticket no encontrado."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            obj.status = new_status
+            obj.save(update_fields=["status", "updated_at"])
+            return Response(
+                {
+                    "success": True,
+                    "data": {"id": str(obj.id), "status": obj.status},
+                }
+            )
+
+        return Response(
+            {"success": False, "message": "Tipo de buzón inválido."},
+            status=status.HTTP_400_BAD_REQUEST,
         )

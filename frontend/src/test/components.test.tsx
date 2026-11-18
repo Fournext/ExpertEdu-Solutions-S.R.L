@@ -6,6 +6,7 @@ import { ResourcesExplorer, type ResourceSummary } from '../components/interacti
 import { ContactForm } from '../components/interactive/ContactForm';
 import { SupportTicketForm } from '../components/interactive/SupportTicketForm';
 import { StudioAccessButton } from '../components/ui/StudioAccessButton';
+import { RegisterForm } from '../components/interactive/AuthForms';
 import * as api from '../services/api';
 
 describe('FaqAccordion', () => {
@@ -189,5 +190,53 @@ describe('SupportTicketForm', () => {
       expect(spy).toHaveBeenCalledTimes(1);
     });
     expect(await screen.findByText(/EXP-100001/)).toBeInTheDocument();
+  });
+});
+
+describe('RegisterForm', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('keeps username and password disabled until OTP verification succeeds and requires 2 legal checkboxes', async () => {
+    vi.spyOn(api, 'sendVerificationCode').mockResolvedValue({
+      success: true,
+      message: 'Código enviado',
+      data: { email: 'nuevo@universidad.edu.bo' },
+    });
+    vi.spyOn(api, 'verifyEmailCode').mockResolvedValue({
+      success: true,
+      message: 'Correo verificado',
+      data: { email: 'nuevo@universidad.edu.bo', verification_token: 'tok-123' },
+    });
+
+    render(<RegisterForm />);
+
+    // Bloqueados antes de verificar OTP
+    expect(screen.getByLabelText(/nombre de usuario/i)).toBeDisabled();
+    expect(screen.getByLabelText(/^contraseña/i)).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+      target: { value: 'nuevo@universidad.edu.bo' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /enviar código/i }));
+
+    const otpInput = await screen.findByLabelText(/código temporal/i);
+    fireEvent.change(otpInput, { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: /verificar código/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/nombre de usuario/i)).toBeEnabled();
+    });
+    expect(screen.getByLabelText(/^contraseña/i)).toBeEnabled();
+
+    const submitBtn = screen.getByRole('button', { name: /crear cuenta en expertedu/i });
+    expect(submitBtn).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText(/política de privacidad/i));
+    expect(submitBtn).toBeDisabled();
+
+    fireEvent.click(screen.getByLabelText(/términos y condiciones/i));
+    expect(submitBtn).toBeEnabled();
   });
 });
