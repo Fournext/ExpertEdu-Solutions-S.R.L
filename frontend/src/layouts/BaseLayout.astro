@@ -54,7 +54,7 @@ const defaultOrgSchema = {
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#1E40AF" />
+    <meta name="theme-color" content="#0F766E" />
 
     <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
@@ -69,11 +69,11 @@ const defaultOrgSchema = {
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
 
-    <!-- Typography: Inter & Outfit -->
+    <!-- Typography: Plus Jakarta Sans, Lora & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
 
@@ -82,7 +82,7 @@ const defaultOrgSchema = {
       set:html={JSON.stringify(structuredData || defaultOrgSchema)}
     />
   </head>
-  <body class="flex min-h-screen flex-col bg-white text-brand-graphite">
+  <body class="flex min-h-screen flex-col bg-brand-surface text-brand-graphite">
     <a
       href="#contenido-principal"
       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-brand-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"

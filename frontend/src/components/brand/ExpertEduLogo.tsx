@@ -16,10 +16,10 @@ export const ExpertEduLogo: React.FC<ExpertEduLogoProps> = ({
   const isDark = variant === 'dark';
   const isMono = variant === 'mono';
 
-  const bgFill = isMono ? '#0F172A' : isDark ? '#1E40AF' : '#1E40AF';
-  const accentStroke = isMono ? '#FFFFFF' : '#10B981';
+  const bgFill = isMono ? '#1C1917' : isDark ? '#0F766E' : '#0F766E';
+  const accentStroke = isMono ? '#FFFFFF' : '#14B8A6';
   const textColor = isDark ? 'text-white' : 'text-brand-graphite';
-  const subTextColor = isDark ? 'text-slate-300' : 'text-brand-muted';
+  const subTextColor = isDark ? 'text-stone-300' : 'text-brand-muted';
 
   const mark = (
     <svg

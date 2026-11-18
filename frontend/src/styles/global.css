@@ -1,26 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", Georgia, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-brand-primary: #1e40af;
-  --color-brand-primary-hover: #1e3a8a;
-  --color-brand-primary-light: #dbeafe;
-  --color-brand-graphite: #0f172a;
-  --color-brand-slate: #334155;
-  --color-brand-muted: #64748b;
-  --color-brand-accent: #10b981;
-  --color-brand-accent-dark: #047857;
-  --color-brand-surface: #f8fafc;
-  --color-brand-border: #e2e8f0;
+  --color-brand-primary: #0f766e;
+  --color-brand-primary-hover: #115e59;
+  --color-brand-primary-light: #ccfbf1;
+  --color-brand-graphite: #1c1917;
+  --color-brand-slate: #3f3f46;
+  --color-brand-muted: #71717a;
+  --color-brand-accent: #14b8a6;
+  --color-brand-accent-dark: #0d9488;
+  --color-brand-surface: #fafaf9;
+  --color-brand-border: #e7e5e4;
 }
 
 @layer base {
   html {
     font-family: var(--font-sans);
     color: var(--color-brand-graphite);
-    background-color: #ffffff;
+    background-color: #fafaf9;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
   }
