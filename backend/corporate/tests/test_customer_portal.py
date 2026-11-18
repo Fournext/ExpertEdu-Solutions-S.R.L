@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core import mail
 from rest_framework.test import APIClient
 
 from corporate.models import ContactInquiry, EmailVerificationCode, SupportTicket
@@ -58,7 +59,8 @@ def test_otp_registration_requires_verified_code_and_both_legal_checks():
     )
     assert missing_terms.status_code == 400
 
-    # 5. Valid registration with both checks -> 201 + session token
+    # 5. Valid registration with both checks -> 201 + session token + 3 emails
+    mail.outbox.clear()
     reg_res = client.post(
         "/api/v1/auth/register/",
         {
@@ -75,6 +77,8 @@ def test_otp_registration_requires_verified_code_and_both_legal_checks():
         format="json",
     )
     assert reg_res.status_code == 201
+    assert len(mail.outbox) == 3
+    assert all(msg.alternatives for msg in mail.outbox)
     session_token = reg_res.json()["data"]["token"]
     assert reg_res.json()["data"]["user"]["is_superadmin"] is False
 

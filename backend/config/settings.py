@@ -157,6 +157,7 @@ STUDIO_PUBLIC_URL = os.getenv(
     "STUDIO_PUBLIC_URL",
     os.getenv("PUBLIC_EXPERTEDU_STUDIO_URL", "http://localhost:5173"),
 ).rstrip("/")
+PUBLIC_SITE_URL = os.getenv("PUBLIC_SITE_URL", "https://expertedu.bo").rstrip("/")
 STUDIO_SERVICE_KEY = os.getenv(
     "STUDIO_SERVICE_KEY", "expertedu-studio-sso-dev-key"
 )

@@ -41,6 +41,7 @@ from .services import (
     provision_user_in_studio,
     send_contact_notification,
     send_password_reset_code_email,
+    send_registration_emails,
     send_support_notification,
     send_verification_code_email,
 )
@@ -306,6 +307,7 @@ class CustomerRegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token = CorporateSessionToken.issue_for_user(user)
+        send_registration_emails(user)
 
         return Response(
             {
