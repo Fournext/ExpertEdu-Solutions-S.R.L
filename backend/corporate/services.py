@@ -526,15 +526,108 @@ DEFAULT_CORPORATE_CONTEXT = (
 )
 
 
+_CHATBOT_STOPWORDS = {
+    "como", "cual", "cuales", "cuanto", "cuanta", "cuantos", "cuantas",
+    "para", "sobre", "tiene", "tienen", "puede", "pueden", "quiero", "saber",
+    "todo", "toda", "todos", "todas", "esta", "este", "esto", "estas", "estos",
+    "unas", "unos", "desde", "hasta", "entre", "donde", "cuando", "quien",
+    "algo", "pero", "porque", "hola", "buenas", "buenos", "dias", "tardes",
+    "noches", "favor", "gracias", "ayuda", "info", "informacion", "cuesta",
+    "vale", "cual", "son", "del", "las", "los", "una", "uno", "con", "sin",
+    "que", "por", "hay",
+}
+
+_PRICE_INTENT_WORDS = {"cuesta", "precio", "precios", "costo", "costos", "tarifa", "vale"}
+_PRICE_BOOST_WORDS = {"precio", "costo", "tarifa", "plan", "mensual", "anual", "bs", "usd"}
+
+
+def _extract_search_terms(question: str) -> set[str]:
+    """Extract meaningful lowercase search terms from a user question."""
+    raw_words = re.findall(r"[a-zA-ZáéíóúñÁÉÍÓÚÑ0-9]{3,}", question.lower())
+    terms = {w for w in raw_words if w not in _CHATBOT_STOPWORDS}
+    if any(w in _PRICE_INTENT_WORDS for w in raw_words):
+        terms.update(_PRICE_BOOST_WORDS)
+    return terms or set(raw_words)
+
+
+def _clean_markdown_snippet(text: str) -> str:
+    """Strip markdown anchors, table borders, and escape noise for readable replies."""
+    cleaned = re.sub(r"\{#[^}]+\}", "", text)
+    cleaned = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", cleaned)
+    cleaned = re.sub(r"\\([#.*_\-])", r"\1", cleaned)
+    cleaned = re.sub(r"\|[-:\s|]+\|", " ", cleaned)
+    cleaned = cleaned.replace("|", " · ")
+    cleaned = re.sub(r"\*{1,3}", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def _build_concise_fallback_answer(
+    question: str,
+    active_entries: list[ChatbotKnowledgeEntry],
+) -> str:
+    """Return a concise, relevant 1-2 sentence fallback without dumping raw doc chunks."""
+    q_terms = _extract_search_terms(question)
+    candidates: list[tuple[int, str]] = []
+
+    for block in DEFAULT_CORPORATE_CONTEXT.split("\n\n"):
+        clean_block = _clean_markdown_snippet(block)
+        if clean_block:
+            score = sum(1 for w in q_terms if w in clean_block.lower())
+            if score > 0:
+                candidates.append((score, clean_block))
+
+    for entry in active_entries:
+        title_clean = re.sub(r"\s*\(Parte\s+\d+/\d+\)\s*", "", entry.title).strip()
+        raw_lines = re.split(r"(?<=[.!?])\s+|\n+", entry.content)
+        for segment in raw_lines:
+            clean_seg = _clean_markdown_snippet(segment)
+            if len(clean_seg) < 20:
+                continue
+            seg_lower = clean_seg.lower()
+            score = sum(2 if w in seg_lower else 0 for w in q_terms)
+            if any(w in title_clean.lower() for w in q_terms):
+                score += 1
+            if score > 0:
+                candidates.append((score, clean_seg))
+
+    if candidates:
+        candidates.sort(key=lambda item: (item[0], -len(item[1])), reverse=True)
+        chosen: list[str] = []
+        total_len = 0
+        for _, text in candidates:
+            if text in chosen:
+                continue
+            snippet = text[:320].rsplit(" ", 1)[0] + "..." if len(text) > 320 else text
+            if chosen and total_len + len(snippet) > 420:
+                break
+            chosen.append(snippet)
+            total_len += len(snippet)
+            if len(chosen) >= 2:
+                break
+
+        summary = "\n\n".join(chosen)
+        return (
+            f"{summary}\n\n"
+            "Si necesitas información más específica o cotización formal, escríbenos a "
+            "contacto@expertedu.bo o usa /contacto."
+        )
+
+    return (
+        "ExpertEdu Solutions S.R.L. ofrece **ExpertEdu Studio**, nuestra plataforma "
+        "interactiva para enseñanza de Sistemas Expertos con planes Estudiante, Docente "
+        "Individual y Licencia Institucional. Para detalles específicos o cotizaciones, "
+        "escríbenos a contacto@expertedu.bo o visita /contacto."
+    )
+
+
 def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> dict:
     """
     Answers public questions about ExpertEdu and ExpertEdu Studio using Gemini API,
     grounded with all active ChatbotKnowledgeEntry items loaded by Superadmin.
     """
     active_entries = list(ChatbotKnowledgeEntry.objects.filter(is_active=True))
-    q_words = {
-        w for w in re.findall(r"[a-zA-ZáéíóúñÁÉÍÓÚÑ0-9]{3,}", question.lower())
-    }
+    q_words = _extract_search_terms(question)
     scored_entries: list[tuple[int, ChatbotKnowledgeEntry]] = []
     for entry in active_entries:
         title_l = entry.title.lower()
@@ -548,10 +641,10 @@ def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> d
     scored_entries.sort(key=lambda pair: (pair[0], pair[1].updated_at), reverse=True)
 
     selected_entries: list[ChatbotKnowledgeEntry] = []
-    char_budget = 45000
+    char_budget = 30000
     used_chars = 0
     for _, entry in scored_entries:
-        if len(selected_entries) >= 12 or used_chars >= char_budget:
+        if len(selected_entries) >= 8 or used_chars >= char_budget:
             break
         selected_entries.append(entry)
         used_chars += len(entry.content)
@@ -572,7 +665,8 @@ def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> d
     if api_key:
         system_prompt = (
             "Eres el asistente virtual oficial de ExpertEdu Solutions S.R.L. "
-            "Responde en español, de forma clara, profesional y concisa. "
+            "Responde en español, de forma directa y concisa (máximo 4 a 6 líneas o "
+            "viñetas breves), sin pegar fragmentos extensos ni tablas crudas de documentos. "
             "Responde únicamente sobre la empresa ExpertEdu, sus servicios, planes "
             "y su producto ExpertEdu Studio utilizando exclusivamente la BASE DE "
             "CONOCIMIENTO proporcionada. "
@@ -628,31 +722,7 @@ def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> d
         except Exception:
             logger.exception("Gemini API call failed; using knowledge base fallback.")
 
-    # Fallback local si no hay GEMINI_API_KEY o si Gemini no respondió
-    q_words = {w for w in question.lower().split() if len(w) >= 3}
-    best_entry = None
-    best_score = 0
-    for entry in active_entries:
-        haystack = f"{entry.title} {entry.content}".lower()
-        score = sum(1 for w in q_words if w in haystack)
-        if score > best_score:
-            best_score = score
-            best_entry = entry
-
-    if best_entry:
-        fallback_answer = (
-            f"Sobre **{best_entry.title}**: {best_entry.content}\n\n"
-            "Si necesitas atención personalizada, contáctanos en contacto@expertedu.bo "
-            "o desde la sección /contacto."
-        )
-    else:
-        fallback_answer = (
-            "ExpertEdu Solutions S.R.L. desarrolla soluciones tecnológicas educativas, "
-            "siendo su producto principal ExpertEdu Studio (plataforma interactiva para "
-            "enseñanza de Sistemas Expertos con editor visual, motor Forward Chaining y "
-            "validación de bases de conocimiento). Puedes registrarte, elegir tu rol "
-            "(Docente o Estudiante) o escribirnos a contacto@expertedu.bo."
-        )
+    fallback_answer = _build_concise_fallback_answer(question, active_entries)
 
     return {
         "answer": fallback_answer,
