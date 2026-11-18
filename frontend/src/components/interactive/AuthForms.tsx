@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -23,7 +23,16 @@ export const LoginForm: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === 'ok') {
+      setResetSuccess(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +62,19 @@ export const LoginForm: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      {resetSuccess && (
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900"
+        >
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-emerald" aria-hidden="true" />
+          <span>
+            Contraseña actualizada correctamente. Ya puedes iniciar sesión con tu nueva
+            contraseña.
+          </span>
+        </div>
+      )}
+
       {error && (
         <div
           role="alert"
@@ -522,13 +544,13 @@ export const PasswordResetForm: React.FC = () => {
     setSuccessMsg('');
     setBusy('confirm');
     try {
-      const res = await confirmPasswordReset({
+      await confirmPasswordReset({
         email: email.trim().toLowerCase(),
         code: code.trim(),
         new_password: newPassword,
         confirm_password: confirmPassword,
       });
-      setSuccessMsg(res.message);
+      window.location.assign('/login?reset=ok');
     } catch (err) {
       const apiErr = err as ApiErrorResult;
       setError(apiErr.message || 'No se pudo restablecer la contraseña.');
@@ -560,7 +582,7 @@ export const PasswordResetForm: React.FC = () => {
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <label htmlFor="reset-email" className="block text-sm font-medium text-brand-graphite">
             Correo electrónico de tu cuenta
           </label>
@@ -570,14 +592,14 @@ export const PasswordResetForm: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="correo@institucion.edu.bo"
-            className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite"
+            className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none"
           />
         </div>
         <button
           type="button"
           onClick={handleSend}
           disabled={busy === 'send'}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-graphite px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-brand-graphite px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
         >
           <Send className="h-4 w-4" aria-hidden="true" />
           {busy === 'send' ? 'Enviando...' : codeSent ? 'Reenviar código' : 'Enviar código'}
@@ -598,44 +620,42 @@ export const PasswordResetForm: React.FC = () => {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="Ej. 482910"
-              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm font-mono tracking-widest text-brand-graphite"
+              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm font-mono tracking-widest text-brand-graphite focus:border-brand-primary focus:outline-none"
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="reset-password"
-                className="block text-sm font-medium text-brand-graphite"
-              >
-                Nueva contraseña (mín. 8 caracteres)
-              </label>
-              <input
-                id="reset-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite"
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="reset-password"
+              className="block text-sm font-medium text-brand-graphite"
+            >
+              Nueva contraseña (mín. 8 caracteres)
+            </label>
+            <input
+              id="reset-password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="••••••••"
+              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none"
+            />
+          </div>
 
-            <div>
-              <label
-                htmlFor="reset-confirm"
-                className="block text-sm font-medium text-brand-graphite"
-              >
-                Confirmar contraseña
-              </label>
-              <input
-                id="reset-confirm"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite"
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="reset-confirm"
+              className="block text-sm font-medium text-brand-graphite"
+            >
+              Confirmar contraseña
+            </label>
+            <input
+              id="reset-confirm"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none"
+            />
           </div>
 
           <button
