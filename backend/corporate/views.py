@@ -745,7 +745,10 @@ class SuperAdminInboxReplyView(APIView):
                 return Response(
                     {
                         "success": False,
-                        "message": "No se pudo enviar el correo de respuesta. Revisa la configuración SMTP.",
+                        "message": (
+                            "No se pudo enviar el correo de respuesta. "
+                            "Revisa la configuración SMTP."
+                        ),
                     },
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
@@ -787,7 +790,10 @@ class SuperAdminInboxReplyView(APIView):
                 return Response(
                     {
                         "success": False,
-                        "message": "No se pudo enviar el correo de respuesta. Revisa la configuración SMTP.",
+                        "message": (
+                            "No se pudo enviar el correo de respuesta. "
+                            "Revisa la configuración SMTP."
+                        ),
                     },
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
