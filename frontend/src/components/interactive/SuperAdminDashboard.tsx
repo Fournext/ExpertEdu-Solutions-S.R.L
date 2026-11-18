@@ -9,6 +9,7 @@ import {
   Mail,
   Plus,
   Trash2,
+  Upload,
   Users,
 } from 'lucide-react';
 import {
@@ -20,6 +21,7 @@ import {
   saveStoredSession,
   updateChatbotKnowledge,
   updateInboxItemStatus,
+  uploadChatbotDocument,
   type ApiErrorResult,
   type ChatbotKnowledgeItem,
   type InboxMessageItem,
@@ -129,6 +131,12 @@ export const SuperAdminDashboard: React.FC = () => {
   const [kbContent, setKbContent] = useState('');
   const [kbSaving, setKbSaving] = useState(false);
 
+  const [docFile, setDocFile] = useState<globalThis.File | null>(null);
+  const [docCategory, setDocCategory] = useState<KnowledgeCategory>('EMPRESA');
+  const [docTitle, setDocTitle] = useState('');
+  const [docUploading, setDocUploading] = useState(false);
+  const [docSuccess, setDocSuccess] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -234,6 +242,30 @@ export const SuperAdminDashboard: React.FC = () => {
       setKnowledge((prev) => prev.filter((k) => k.id !== id));
     } catch {
       setError('No se pudo eliminar el registro.');
+    }
+  };
+
+  const handleUploadDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docFile) {
+      setError('Selecciona un documento (.pdf, .docx, .md, .txt, .csv, .html, .json).');
+      return;
+    }
+    setError('');
+    setDocSuccess('');
+    setDocUploading(true);
+    try {
+      const res = await uploadChatbotDocument(docFile, docCategory, docTitle);
+      const createdList = res.entries && res.entries.length > 0 ? res.entries : [res.data];
+      setKnowledge((prev) => [...createdList, ...prev]);
+      setDocSuccess(res.message);
+      setDocFile(null);
+      setDocTitle('');
+    } catch (err) {
+      const apiErr = err as ApiErrorResult;
+      setError(apiErr.message || 'No se pudo procesar el documento.');
+    } finally {
+      setDocUploading(false);
     }
   };
 
@@ -561,7 +593,87 @@ export const SuperAdminDashboard: React.FC = () => {
 
       {activeTab === 'chatbot' && (
         <div className="grid gap-8 lg:grid-cols-12">
-          <div className="lg:col-span-5">
+          <div className="space-y-6 lg:col-span-5">
+            <form
+              onSubmit={handleUploadDoc}
+              className="rounded-2xl border border-brand-border bg-white p-6 shadow-xs space-y-4"
+            >
+              <div className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-brand-primary" aria-hidden="true" />
+                <h3 className="font-display text-lg font-bold text-brand-graphite">
+                  Subir documento (conversión a Markdown)
+                </h3>
+              </div>
+              <p className="text-xs text-brand-slate">
+                Acepta <code>.pdf</code>, <code>.docx</code>, <code>.md</code>, <code>.txt</code>,{' '}
+                <code>.csv</code>, <code>.html</code> o <code>.json</code> (máx. 5 MB). El servidor
+                lo transforma internamente a <strong>Markdown (.md)</strong> antes de guardarlo para
+                el chatbot.
+              </p>
+
+              {docSuccess && (
+                <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                  {docSuccess}
+                </p>
+              )}
+
+              <div>
+                <label htmlFor="doc-file" className="block text-xs font-semibold text-brand-graphite">
+                  Archivo
+                </label>
+                <input
+                  id="doc-file"
+                  type="file"
+                  accept=".pdf,.docx,.md,.txt,.csv,.html,.htm,.json"
+                  onChange={(e) => setDocFile(e.target.files?.[0] || null)}
+                  className="mt-1 block w-full text-xs text-brand-slate file:mr-3 file:rounded-lg file:border-0 file:bg-brand-primary/10 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-brand-primary hover:file:bg-brand-primary/20"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="doc-title" className="block text-xs font-semibold text-brand-graphite">
+                  Título (opcional)
+                </label>
+                <input
+                  id="doc-title"
+                  type="text"
+                  value={docTitle}
+                  onChange={(e) => setDocTitle(e.target.value)}
+                  placeholder="Si se deja vacío usa el nombre del archivo"
+                  className="mt-1 block w-full rounded-lg border border-brand-border px-3 py-2 text-sm text-brand-graphite"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="doc-category"
+                  className="block text-xs font-semibold text-brand-graphite"
+                >
+                  Categoría
+                </label>
+                <select
+                  id="doc-category"
+                  value={docCategory}
+                  onChange={(e) => setDocCategory(e.target.value as KnowledgeCategory)}
+                  className="mt-1 block w-full rounded-lg border border-brand-border bg-white px-3 py-2 text-sm text-brand-graphite"
+                >
+                  {KNOWLEDGE_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={docUploading}
+                className="w-full rounded-lg bg-brand-graphite px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+              >
+                {docUploading ? 'Convirtiendo a Markdown...' : 'Subir y convertir a Markdown'}
+              </button>
+            </form>
+
             <form
               onSubmit={handleCreateKnowledge}
               className="rounded-2xl border border-brand-border bg-white p-6 shadow-xs space-y-4"
@@ -653,9 +765,16 @@ export const SuperAdminDashboard: React.FC = () => {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <span className="rounded-full bg-brand-primary/10 px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
-                        {item.category_label}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-brand-primary/10 px-2.5 py-0.5 text-xs font-semibold text-brand-primary">
+                          {item.category_label}
+                        </span>
+                        {item.source_filename && (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-mono text-brand-slate">
+                            MD desde: {item.source_filename}
+                          </span>
+                        )}
+                      </div>
                       <h4 className="mt-2 font-display text-base font-bold text-brand-graphite">
                         {item.title}
                       </h4>

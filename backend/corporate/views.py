@@ -1,5 +1,6 @@
 """REST API views for health, contact inquiries, and support tickets."""
 
+import os
 import secrets
 from datetime import timedelta
 
@@ -9,6 +10,7 @@ from django.db import connection
 from django.db.models import Count
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,6 +43,7 @@ from .serializers import (
 )
 from .services import (
     ask_corporate_chatbot,
+    convert_uploaded_document_to_markdown,
     hash_client_ip,
     provision_user_in_studio,
     send_contact_notification,
@@ -48,6 +51,7 @@ from .services import (
     send_registration_emails,
     send_support_notification,
     send_verification_code_email,
+    split_markdown_into_chunks,
 )
 from .throttling import ContactRateThrottle, SupportRateThrottle
 
@@ -837,3 +841,75 @@ class SuperAdminChatbotKnowledgeDetailView(APIView):
             )
         entry.delete()
         return Response({"success": True}, status=status.HTTP_200_OK)
+
+
+class SuperAdminChatbotDocumentUploadView(APIView):
+    """Accepts a document upload, converts it internally to Markdown, and stores it."""
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+
+        uploaded_file = request.FILES.get("file")
+        if not uploaded_file:
+            return Response(
+                {"success": False, "message": "Debes seleccionar un archivo para subir."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        category = str(request.data.get("category", ChatbotKnowledgeEntry.Category.OTRO)).strip()
+        valid_categories = {c[0] for c in ChatbotKnowledgeEntry.Category.choices}
+        if category not in valid_categories:
+            category = ChatbotKnowledgeEntry.Category.OTRO
+
+        raw_title = str(request.data.get("title", "")).strip()
+        default_title = os.path.splitext(uploaded_file.name)[0].replace("_", " ").replace("-", " ")
+        title = (raw_title or default_title or "Documento cargado")[:160]
+
+        try:
+            markdown_content = convert_uploaded_document_to_markdown(uploaded_file)
+        except ValueError as exc:
+            return Response(
+                {"success": False, "message": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        chunks = split_markdown_into_chunks(markdown_content)
+        total_parts = len(chunks)
+        created_entries = []
+        for idx, chunk in enumerate(chunks, start=1):
+            part_title = (
+                title
+                if total_parts == 1
+                else f"{title[:135]} (Parte {idx}/{total_parts})"
+            )
+            created_entries.append(
+                ChatbotKnowledgeEntry.objects.create(
+                    title=part_title,
+                    category=category,
+                    content=chunk,
+                    source_filename=uploaded_file.name[:255],
+                    is_active=True,
+                )
+            )
+
+        serialized = ChatbotKnowledgeEntrySerializer(created_entries, many=True).data
+        msg = (
+            "Documento convertido a Markdown y guardado en la base del chatbot."
+            if total_parts == 1
+            else f"Documento convertido a Markdown y dividido en {total_parts} partes buscables."
+        )
+        return Response(
+            {
+                "success": True,
+                "message": msg,
+                "parts_count": total_parts,
+                "data": serialized[0],
+                "entries": serialized,
+            },
+            status=status.HTTP_201_CREATED,
+        )

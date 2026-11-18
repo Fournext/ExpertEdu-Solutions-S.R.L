@@ -291,7 +291,8 @@ class ChatbotKnowledgeEntry(models.Model):
         choices=Category.choices,
         default=Category.EMPRESA,
     )
-    content = models.TextField(max_length=6000)
+    content = models.TextField(max_length=30000)
+    source_filename = models.CharField(max_length=255, blank=True, default="")
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -14,6 +14,86 @@ const SUGGESTED_QUESTIONS = [
   '¿Qué planes comerciales existen?',
 ];
 
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return tokens.map((token, idx) => {
+    if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
+      return (
+        <strong key={idx} className="font-semibold text-brand-graphite">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
+      return (
+        <em key={idx} className="italic">
+          {token.slice(1, -1)}
+        </em>
+      );
+    }
+    if (token.startsWith('`') && token.endsWith('`') && token.length > 2) {
+      return (
+        <code
+          key={idx}
+          className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px] text-brand-primary"
+        >
+          {token.slice(1, -1)}
+        </code>
+      );
+    }
+    return <React.Fragment key={idx}>{token}</React.Fragment>;
+  });
+}
+
+function renderFormattedMessage(text: string): React.ReactNode {
+  const blocks = text.split(/\n{2,}/);
+  return (
+    <div className="space-y-2">
+      {blocks.map((block, bIdx) => {
+        const lines = block.split('\n').map((l) => l.trimEnd());
+        const isBulletList = lines.every((l) => /^[-*•]\s+/.test(l.trim()));
+        const isOrderedList = lines.every((l) => /^\d+\.\s+/.test(l.trim()));
+
+        if (isBulletList) {
+          return (
+            <ul key={bIdx} className="list-disc space-y-1 pl-4">
+              {lines.map((l, lIdx) => (
+                <li key={lIdx}>{renderInlineMarkdown(l.trim().replace(/^[-*•]\s+/, ''))}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (isOrderedList) {
+          return (
+            <ol key={bIdx} className="list-decimal space-y-1 pl-4">
+              {lines.map((l, lIdx) => (
+                <li key={lIdx}>{renderInlineMarkdown(l.trim().replace(/^\d+\.\s+/, ''))}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        return (
+          <div key={bIdx} className="space-y-1">
+            {lines.map((line, lIdx) => {
+              const trimmed = line.trim();
+              if (/^#{1,3}\s+/.test(trimmed)) {
+                return (
+                  <p key={lIdx} className="font-display font-bold text-brand-graphite">
+                    {renderInlineMarkdown(trimmed.replace(/^#{1,3}\s+/, ''))}
+                  </p>
+                );
+              }
+              return <p key={lIdx}>{renderInlineMarkdown(line)}</p>;
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export const CorporateChatbot: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -100,13 +180,13 @@ export const CorporateChatbot: React.FC = () => {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-brand-primary text-white'
-                      : 'border border-brand-border bg-white text-brand-graphite shadow-2xs'
+                      ? 'whitespace-pre-line bg-brand-primary text-white'
+                      : 'border border-brand-border bg-white text-brand-slate shadow-2xs'
                   }`}
                 >
-                  {msg.text}
+                  {msg.role === 'user' ? msg.text : renderFormattedMessage(msg.text)}
                 </div>
               </div>
             ))}

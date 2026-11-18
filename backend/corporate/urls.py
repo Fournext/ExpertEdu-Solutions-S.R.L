@@ -17,6 +17,7 @@ from .views import (
     StudioLaunchView,
     SuperAdminChatbotKnowledgeDetailView,
     SuperAdminChatbotKnowledgeListCreateView,
+    SuperAdminChatbotDocumentUploadView,
     SuperAdminInboxStatusView,
     SuperAdminInboxView,
     SuperAdminOverviewView,
@@ -72,6 +73,11 @@ urlpatterns = [
         "superadmin/chatbot-knowledge/",
         SuperAdminChatbotKnowledgeListCreateView.as_view(),
         name="api-superadmin-chatbot-kb",
+    ),
+    path(
+        "superadmin/chatbot-knowledge/upload-doc/",
+        SuperAdminChatbotDocumentUploadView.as_view(),
+        name="api-superadmin-chatbot-upload-doc",
     ),
     path(
         "superadmin/chatbot-knowledge/<str:entry_id>/",

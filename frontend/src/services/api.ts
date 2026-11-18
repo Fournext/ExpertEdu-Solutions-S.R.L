@@ -389,6 +389,7 @@ export interface ChatbotKnowledgeItem {
   category: KnowledgeCategory;
   category_label: string;
   content: string;
+  source_filename?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -441,6 +442,47 @@ export function deleteChatbotKnowledge(id: string) {
     method: 'PATCH',
     body: undefined,
   }).catch(() => undefined);
+}
+
+export async function uploadChatbotDocument(
+  file: globalThis.File,
+  category: KnowledgeCategory,
+  title?: string,
+) {
+  const token = getStoredSession()?.token ?? null;
+  const formData = new globalThis.FormData();
+  formData.append('file', file);
+  formData.append('category', category);
+  if (title && title.trim()) {
+    formData.append('title', title.trim());
+  }
+
+  const response = await fetch(
+    `${SITE_CONFIG.apiBaseUrl}/superadmin/chatbot-knowledge/upload-doc/`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: formData,
+    },
+  );
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error: ApiErrorResult = {
+      status: response.status,
+      message:
+        typeof data.message === 'string'
+          ? data.message
+          : 'No se pudo convertir ni subir el documento.',
+    };
+    throw error;
+  }
+  return data as {
+    success: boolean;
+    message: string;
+    parts_count?: number;
+    data: ChatbotKnowledgeItem;
+    entries?: ChatbotKnowledgeItem[];
+  };
 }
 
 export function fetchSuperAdminInbox() {

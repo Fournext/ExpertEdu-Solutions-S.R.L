@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 
 from corporate.models import ContactInquiry, EmailVerificationCode, SupportTicket
@@ -166,6 +167,36 @@ def test_superadmin_dashboard_kpis_and_two_inboxes():
         format="json",
     )
     assert kb_res.status_code == 201
+
+    # Admin uploads a CSV/HTML/TXT document and backend converts it internally to Markdown
+    csv_doc = SimpleUploadedFile(
+        "planes_referenciales.csv",
+        b"Plan,Publico\nEstudiante,Estudiantes universitarios\nDocente,Docentes",
+        content_type="text/csv",
+    )
+    upload_res = client.post(
+        "/api/v1/superadmin/chatbot-knowledge/upload-doc/",
+        {"file": csv_doc, "category": "PRECIOS"},
+        format="multipart",
+    )
+    assert upload_res.status_code == 201
+    assert "| Plan | Publico |" in upload_res.json()["data"]["content"]
+    assert upload_res.json()["data"]["source_filename"] == "planes_referenciales.csv"
+
+    # Large document > 12000 chars gets split into multiple searchable Markdown parts
+    large_body = "\n\n".join(
+        f"Sección {i}: Información detallada sobre ExpertEdu Studio y su motor lógico."
+        for i in range(300)
+    ).encode("utf-8")
+    large_doc = SimpleUploadedFile("manual_extenso.txt", large_body, content_type="text/plain")
+    large_res = client.post(
+        "/api/v1/superadmin/chatbot-knowledge/upload-doc/",
+        {"file": large_doc, "category": "PRODUCTO"},
+        format="multipart",
+    )
+    assert large_res.status_code == 201
+    assert large_res.json()["parts_count"] >= 2
+    assert "(Parte 1/" in large_res.json()["data"]["title"]
 
     # Public chatbot (anonymous) answers using loaded knowledge
     public_client = APIClient()

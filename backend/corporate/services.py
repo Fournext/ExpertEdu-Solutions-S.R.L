@@ -1,10 +1,15 @@
 """Notification and privacy-preserving utility services."""
 
+import csv
 import hashlib
+import io
 import json
 import logging
+import os
+import re
 import urllib.error
 import urllib.request
+from html.parser import HTMLParser
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -440,10 +445,34 @@ def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> d
     Answers public questions about ExpertEdu and ExpertEdu Studio using Gemini API,
     grounded with all active ChatbotKnowledgeEntry items loaded by Superadmin.
     """
-    active_entries = list(ChatbotKnowledgeEntry.objects.filter(is_active=True)[:40])
+    active_entries = list(ChatbotKnowledgeEntry.objects.filter(is_active=True))
+    q_words = {
+        w for w in re.findall(r"[a-zA-ZáéíóúñÁÉÍÓÚÑ0-9]{3,}", question.lower())
+    }
+    scored_entries: list[tuple[int, ChatbotKnowledgeEntry]] = []
+    for entry in active_entries:
+        title_l = entry.title.lower()
+        content_l = entry.content.lower()
+        score = sum(
+            (3 if w in title_l else 0) + (1 if w in content_l else 0)
+            for w in q_words
+        )
+        scored_entries.append((score, entry))
+
+    scored_entries.sort(key=lambda pair: (pair[0], pair[1].updated_at), reverse=True)
+
+    selected_entries: list[ChatbotKnowledgeEntry] = []
+    char_budget = 45000
+    used_chars = 0
+    for _, entry in scored_entries:
+        if len(selected_entries) >= 12 or used_chars >= char_budget:
+            break
+        selected_entries.append(entry)
+        used_chars += len(entry.content)
+
     extra_blocks = [
         f"### [{entry.get_category_display()}] {entry.title}\n{entry.content}"
-        for entry in active_entries
+        for entry in selected_entries
     ]
     knowledge_text = DEFAULT_CORPORATE_CONTEXT
     if extra_blocks:
@@ -458,9 +487,14 @@ def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> d
         system_prompt = (
             "Eres el asistente virtual oficial de ExpertEdu Solutions S.R.L. "
             "Responde en español, de forma clara, profesional y concisa. "
-            "Responde únicamente sobre la empresa ExpertEdu, sus servicios, planes y su producto "
-            "ExpertEdu Studio utilizando la base de conocimiento proporcionada. "
-            "No inventes cifras, certificaciones ni datos legales no incluidos.\n\n"
+            "Responde únicamente sobre la empresa ExpertEdu, sus servicios, planes "
+            "y su producto ExpertEdu Studio utilizando exclusivamente la BASE DE "
+            "CONOCIMIENTO proporcionada. "
+            "REGLA ESTRICTA: Si la información solicitada no aparece en la BASE DE "
+            "CONOCIMIENTO, NO inventes, supongas ni completes datos (ni precios, "
+            "teléfonos, direcciones exactas, certificaciones o plazos). Indica "
+            "claramente que no dispones de esa información y sugiere escribir a "
+            "contacto@expertedu.bo o usar /contacto.\n\n"
             f"BASE DE CONOCIMIENTO:\n{knowledge_text}"
         )
         contents = []
@@ -539,6 +573,183 @@ def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> d
         "provider": "knowledge_base",
         "sources_count": len(active_entries),
     }
+
+
+class _HTMLTextExtractor(HTMLParser):
+    """Extracts readable text from HTML files without keeping tags."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._parts: list[str] = []
+        self._skip = False
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self._skip = True
+        elif tag in ("h1", "h2", "h3"):
+            self._parts.append("\n## ")
+        elif tag in ("p", "div", "br", "li", "tr"):
+            self._parts.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self._skip = False
+
+    def handle_data(self, data):
+        if not self._skip and data.strip():
+            self._parts.append(data.strip() + " ")
+
+    def get_markdown(self) -> str:
+        raw = "".join(self._parts)
+        return re.sub(r"\n{3,}", "\n\n", raw).strip()
+
+
+ALLOWED_DOC_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".csv", ".html", ".htm", ".json"}
+MAX_DOC_SIZE_BYTES = 5 * 1024 * 1024
+
+
+def convert_uploaded_document_to_markdown(uploaded_file) -> str:
+    """
+    Internally converts an uploaded document (.pdf, .docx, .txt, .md, .csv, .html, .json)
+    into clean Markdown text without forwarding raw binary files to Gemini.
+    """
+    filename = getattr(uploaded_file, "name", "") or "documento.txt"
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in ALLOWED_DOC_EXTENSIONS:
+        raise ValueError(
+            "Formato no soportado. Usa .pdf, .docx, .md, .txt, .csv, .html o .json."
+        )
+
+    size = getattr(uploaded_file, "size", 0) or 0
+    if size > MAX_DOC_SIZE_BYTES:
+        raise ValueError("El archivo supera el tamaño máximo permitido de 5 MB.")
+
+    raw_bytes = uploaded_file.read()
+    if not raw_bytes:
+        raise ValueError("El documento está vacío.")
+
+    markdown_text = ""
+
+    if ext in {".md", ".txt"}:
+        markdown_text = raw_bytes.decode("utf-8", errors="replace").strip()
+    elif ext == ".json":
+        text = raw_bytes.decode("utf-8", errors="replace").strip()
+        try:
+            parsed = json.loads(text)
+            pretty = json.dumps(parsed, ensure_ascii=False, indent=2)
+            markdown_text = f"```json\n{pretty}\n```"
+        except Exception:
+            markdown_text = text
+    elif ext == ".csv":
+        text = raw_bytes.decode("utf-8", errors="replace")
+        rows = list(csv.reader(io.StringIO(text)))
+        if rows:
+            header = rows[0]
+            lines = [
+                "| " + " | ".join(cell.strip() for cell in header) + " |",
+                "| " + " | ".join("---" for _ in header) + " |",
+            ]
+            for row in rows[1:200]:
+                padded = row + [""] * max(0, len(header) - len(row))
+                lines.append("| " + " | ".join(c.strip() for c in padded[:len(header)]) + " |")
+            markdown_text = "\n".join(lines)
+    elif ext in {".html", ".htm"}:
+        extractor = _HTMLTextExtractor()
+        extractor.feed(raw_bytes.decode("utf-8", errors="replace"))
+        markdown_text = extractor.get_markdown()
+    elif ext == ".pdf":
+        from pypdf import PdfReader
+
+        reader = PdfReader(io.BytesIO(raw_bytes))
+        pages_md = []
+        for idx, page in enumerate(reader.pages, start=1):
+            page_text = (page.extract_text() or "").strip()
+            if page_text:
+                pages_md.append(f"## Página {idx}\n\n{page_text}")
+        markdown_text = "\n\n".join(pages_md).strip()
+    elif ext == ".docx":
+        from docx import Document
+
+        doc = Document(io.BytesIO(raw_bytes))
+        blocks: list[str] = []
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if not text:
+                continue
+            style_name = (para.style.name or "").lower() if para.style else ""
+            if "heading 1" in style_name or "título 1" in style_name:
+                blocks.append(f"# {text}")
+            elif "heading 2" in style_name or "título 2" in style_name:
+                blocks.append(f"## {text}")
+            elif "heading 3" in style_name or "título 3" in style_name:
+                blocks.append(f"### {text}")
+            else:
+                blocks.append(text)
+        for table in doc.tables:
+            table_rows = [
+                [cell.text.strip().replace("\n", " ") for cell in row.cells]
+                for row in table.rows
+            ]
+            if table_rows and table_rows[0]:
+                blocks.append("| " + " | ".join(table_rows[0]) + " |")
+                blocks.append("| " + " | ".join("---" for _ in table_rows[0]) + " |")
+                for row in table_rows[1:]:
+                    blocks.append("| " + " | ".join(row) + " |")
+        markdown_text = "\n\n".join(blocks).strip()
+
+    markdown_text = re.sub(r"\n{3,}", "\n\n", markdown_text).strip()
+    if len(markdown_text) < 10:
+        raise ValueError(
+            "No se pudo extraer texto legible suficiente del documento para convertirlo a Markdown."
+        )
+    return markdown_text
+
+
+def split_markdown_into_chunks(
+    markdown_text: str,
+    max_chars: int = 12000,
+    overlap: int = 300,
+) -> list[str]:
+    """
+    Splits large Markdown documents into searchable parts on paragraph boundaries
+    so no content is lost and Gemini can retrieve the most relevant sections.
+    """
+    text = markdown_text.strip()
+    if len(text) <= max_chars:
+        return [text]
+
+    paragraphs = text.split("\n\n")
+    chunks: list[str] = []
+    current = ""
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+
+        if len(para) > max_chars:
+            if current:
+                chunks.append(current.strip())
+                current = ""
+            start = 0
+            step = max(1, max_chars - overlap)
+            while start < len(para):
+                chunks.append(para[start:start + max_chars].strip())
+                start += step
+            continue
+
+        candidate = f"{current}\n\n{para}".strip() if current else para
+        if len(candidate) <= max_chars:
+            current = candidate
+        else:
+            if current:
+                chunks.append(current.strip())
+            current = para
+
+    if current:
+        chunks.append(current.strip())
+
+    return chunks or [text[:max_chars]]
 
 
 def provision_user_in_studio(user, role_code: str) -> dict:

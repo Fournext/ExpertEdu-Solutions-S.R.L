@@ -494,11 +494,12 @@ class ChatbotKnowledgeEntrySerializer(serializers.ModelSerializer):
             "category",
             "category_label",
             "content",
+            "source_filename",
             "is_active",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "source_filename", "created_at", "updated_at"]
 
     def validate_title(self, value: str) -> str:
         return validate_clean_text(value, "El título", 3)
