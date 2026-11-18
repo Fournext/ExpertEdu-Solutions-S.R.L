@@ -20,6 +20,7 @@ import {
   fetchSuperAdminInbox,
   fetchSuperAdminOverview,
   getStoredSession,
+  launchStudioSso,
   saveStoredSession,
   updateChatbotKnowledge,
   updateInboxItemStatus,
@@ -142,6 +143,7 @@ export const SuperAdminDashboard: React.FC = () => {
   const [viewFullDocument, setViewFullDocument] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [launchingStudio, setLaunchingStudio] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -341,44 +343,65 @@ export const SuperAdminDashboard: React.FC = () => {
       )}
 
       {/* Tabs principales */}
-      <div className="flex flex-wrap gap-3 border-b border-brand-border pb-4">
-        <button
-          type="button"
-          onClick={() => setActiveTab('kpis')}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
-            activeTab === 'kpis'
-              ? 'bg-brand-primary text-white'
-              : 'border border-brand-border bg-white text-brand-slate hover:bg-slate-50'
-          }`}
-        >
-          <BarChart3 className="h-4 w-4" aria-hidden="true" />
-          KPIs, Gráficas y Clientes
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-border pb-4">
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab('kpis')}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+              activeTab === 'kpis'
+                ? 'bg-brand-primary text-white'
+                : 'border border-brand-border bg-white text-brand-slate hover:bg-slate-50'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+            KPIs, Gráficas y Clientes
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('inbox')}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+              activeTab === 'inbox'
+                ? 'bg-brand-primary text-white'
+                : 'border border-brand-border bg-white text-brand-slate hover:bg-slate-50'
+            }`}
+          >
+            <Inbox className="h-4 w-4" aria-hidden="true" />
+            Correos recibidos (2 casillas)
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('chatbot')}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+              activeTab === 'chatbot'
+                ? 'bg-brand-primary text-white'
+                : 'border border-brand-border bg-white text-brand-slate hover:bg-slate-50'
+            }`}
+          >
+            <Bot className="h-4 w-4" aria-hidden="true" />
+            Base de conocimiento Chatbot ({knowledge.length})
+          </button>
+        </div>
 
         <button
           type="button"
-          onClick={() => setActiveTab('inbox')}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
-            activeTab === 'inbox'
-              ? 'bg-brand-primary text-white'
-              : 'border border-brand-border bg-white text-brand-slate hover:bg-slate-50'
-          }`}
+          disabled={launchingStudio}
+          onClick={async () => {
+            setLaunchingStudio(true);
+            try {
+              const res = await launchStudioSso();
+              window.location.assign(res.data.sso_url);
+            } catch (err) {
+              const apiErr = err as ApiErrorResult;
+              setError(apiErr.message || 'No se pudo abrir ExpertEdu Studio.');
+              setLaunchingStudio(false);
+            }
+          }}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-graphite px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
         >
-          <Inbox className="h-4 w-4" aria-hidden="true" />
-          Correos recibidos (2 casillas)
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('chatbot')}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
-            activeTab === 'chatbot'
-              ? 'bg-brand-primary text-white'
-              : 'border border-brand-border bg-white text-brand-slate hover:bg-slate-50'
-          }`}
-        >
-          <Bot className="h-4 w-4" aria-hidden="true" />
-          Base de conocimiento Chatbot ({knowledge.length})
+          {launchingStudio ? 'Abriendo Studio...' : 'Ir directo a Studio (Admin)'}
         </button>
       </div>
 

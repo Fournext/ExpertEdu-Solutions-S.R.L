@@ -755,13 +755,14 @@ def split_markdown_into_chunks(
 def provision_user_in_studio(user, role_code: str) -> dict:
     """
     Call ExpertEdu Studio internal provisioning API to create/sync the user
-    with the selected role (Docente or Estudiante) and return SSO tokens.
+    with the selected role (Docente, Estudiante or Admin) and return SSO tokens.
     """
-    studio_role = (
-        "Docente"
-        if role_code == CustomerProductMembership.StudioRole.DOCENTE
-        else "Estudiante"
-    )
+    if user.is_superuser or role_code == "ADMIN":
+        studio_role = "Admin"
+    elif role_code == CustomerProductMembership.StudioRole.DOCENTE:
+        studio_role = "Docente"
+    else:
+        studio_role = "Estudiante"
     profile = getattr(user, "customer_profile", None)
     full_name = profile.full_name if profile else (user.get_full_name() or user.username)
 

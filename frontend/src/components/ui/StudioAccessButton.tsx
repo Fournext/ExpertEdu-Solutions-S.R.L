@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ExternalLink } from 'lucide-react';
 import { EXPERTEDU_STUDIO_URL, hasConfiguredStudioUrl } from '@/config/site';
-import { getStoredSession } from '@/services/api';
+import { getStoredSession, launchStudioSso } from '@/services/api';
 
 interface StudioAccessButtonProps {
   variant?: 'primary' | 'secondary' | 'outline';
@@ -18,9 +18,15 @@ export const StudioAccessButton: React.FC<StudioAccessButtonProps> = ({
 }) => {
   const configured = hasConfiguredStudioUrl();
   const [hasSession, setHasSession] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [launching, setLaunching] = useState(false);
 
   useEffect(() => {
-    const sync = () => setHasSession(Boolean(getStoredSession()));
+    const sync = () => {
+      const sess = getStoredSession();
+      setHasSession(Boolean(sess));
+      setIsSuperadmin(Boolean(sess?.user?.is_superadmin));
+    };
     sync();
     window.addEventListener('expertedu-auth-change', sync);
     return () => window.removeEventListener('expertedu-auth-change', sync);
@@ -34,6 +40,30 @@ export const StudioAccessButton: React.FC<StudioAccessButtonProps> = ({
     outline:
       'border border-brand-border bg-white text-brand-graphite hover:bg-slate-50',
   }[variant];
+
+  if (hasSession && isSuperadmin) {
+    return (
+      <button
+        type="button"
+        disabled={launching}
+        onClick={async () => {
+          setLaunching(true);
+          try {
+            const res = await launchStudioSso();
+            window.location.assign(res.data.sso_url);
+          } catch {
+            window.location.assign('/mi-cuenta');
+          } finally {
+            setLaunching(false);
+          }
+        }}
+        className={`${baseStyles} ${variantStyles} ${className} disabled:opacity-60`}
+      >
+        {launching ? 'Ingresando a Studio...' : 'Ir directo a ExpertEdu Studio (Admin)'}
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </button>
+    );
+  }
 
   if (hasSession) {
     return (

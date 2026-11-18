@@ -429,11 +429,30 @@ class StudioEnrollView(APIView):
 
 
 class StudioLaunchView(APIView):
-    """Generates a fresh SSO launch URL for an already-enrolled ExpertEdu Studio customer."""
+    """Generates a fresh SSO launch URL for an enrolled customer or superadmin."""
 
     permission_classes = [IsAuthenticated]
 
     def post(self, request) -> Response:
+        if request.user.is_superuser:
+            try:
+                studio_result = provision_user_in_studio(request.user, "ADMIN")
+            except RuntimeError as exc:
+                return Response(
+                    {"success": False, "message": str(exc)},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            return Response(
+                {
+                    "success": True,
+                    "data": {
+                        "sso_url": studio_result["sso_url"],
+                        "membership": None,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
         membership = CustomerProductMembership.objects.filter(
             user=request.user,
             product_code=CustomerProductMembership.ProductCode.EXPERTEDU_STUDIO,

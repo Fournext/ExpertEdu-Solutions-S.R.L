@@ -203,7 +203,34 @@ export const CustomerDashboard: React.FC = () => {
           )}
         </div>
 
-        {studioMembership ? (
+        {user.is_superadmin ? (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/60 p-5">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900">
+                  Acceso directo Superadmin
+                </span>
+                <h4 className="mt-2 font-display text-xl font-bold text-brand-graphite">
+                  ExpertEdu Studio — Admin Central
+                </h4>
+                <p className="mt-1 text-sm text-brand-slate">
+                  Como administrador corporativo puedes ingresar directamente a ExpertEdu Studio sin
+                  seleccionar plan ni rol de cliente.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDirectLaunch}
+                disabled={submitting}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-3 text-sm font-semibold text-white hover:bg-brand-primary-hover disabled:opacity-60"
+              >
+                {submitting ? 'Abriendo sesión...' : 'Ir directo a ExpertEdu Studio'}
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        ) : studioMembership ? (
           <div className="mt-6 rounded-xl border border-brand-primary/25 bg-brand-surface p-5">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
