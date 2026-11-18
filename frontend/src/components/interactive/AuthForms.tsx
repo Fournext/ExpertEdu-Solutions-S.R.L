@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
   Lock,
   Mail,
@@ -18,6 +20,54 @@ import {
   verifyEmailCode,
   type ApiErrorResult,
 } from '@/services/api';
+
+interface PasswordInputProps {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  autoComplete?: string;
+}
+
+const PasswordInput: React.FC<PasswordInputProps> = ({
+  id,
+  value,
+  onChange,
+  placeholder = '••••••••',
+  required = false,
+  autoComplete,
+}) => {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative mt-1.5">
+      <input
+        id={id}
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        className="block w-full rounded-lg border border-brand-border bg-white py-2.5 pl-3.5 pr-10 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-stone-100"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((prev) => !prev)}
+        aria-label={visible ? 'Ocultar contraseña' : 'Ver contraseña'}
+        aria-pressed={visible}
+        className="absolute inset-y-0 right-0 flex items-center px-3 text-brand-muted transition-colors hover:text-brand-graphite"
+      >
+        {visible ? (
+          <EyeOff className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Eye className="h-4 w-4" aria-hidden="true" />
+        )}
+      </button>
+    </div>
+  );
+};
 
 export const LoginForm: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
@@ -104,14 +154,12 @@ export const LoginForm: React.FC = () => {
         <label htmlFor="login-password" className="block text-sm font-medium text-brand-graphite">
           Contraseña
         </label>
-        <input
+        <PasswordInput
           id="login-password"
-          type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={setPassword}
           required
-          className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none"
-          placeholder="••••••••"
+          autoComplete="current-password"
         />
       </div>
 
@@ -407,13 +455,11 @@ export const RegisterForm: React.FC = () => {
             <label htmlFor="reg-password" className="block text-sm font-medium text-brand-graphite">
               Contraseña (mín. 8 caracteres) <span className="text-rose-600">*</span>
             </label>
-            <input
+            <PasswordInput
               id="reg-password"
-              type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite disabled:cursor-not-allowed disabled:bg-slate-100"
+              onChange={setPassword}
+              autoComplete="new-password"
             />
           </div>
 
@@ -424,13 +470,11 @@ export const RegisterForm: React.FC = () => {
             >
               Confirmar contraseña <span className="text-rose-600">*</span>
             </label>
-            <input
+            <PasswordInput
               id="reg-confirm-password"
-              type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite disabled:cursor-not-allowed disabled:bg-slate-100"
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
             />
           </div>
         </div>
@@ -631,13 +675,11 @@ export const PasswordResetForm: React.FC = () => {
             >
               Nueva contraseña (mín. 8 caracteres)
             </label>
-            <input
+            <PasswordInput
               id="reset-password"
-              type="password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="••••••••"
-              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none"
+              onChange={setNewPassword}
+              autoComplete="new-password"
             />
           </div>
 
@@ -648,13 +690,11 @@ export const PasswordResetForm: React.FC = () => {
             >
               Confirmar contraseña
             </label>
-            <input
+            <PasswordInput
               id="reset-confirm"
-              type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="mt-1.5 block w-full rounded-lg border border-brand-border bg-white px-3.5 py-2.5 text-sm text-brand-graphite focus:border-brand-primary focus:outline-none"
+              onChange={setConfirmPassword}
+              autoComplete="new-password"
             />
           </div>
 
