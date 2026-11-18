@@ -501,3 +501,18 @@ export function updateInboxItemStatus(
     { method: 'PATCH', body: { status: newStatus } },
   );
 }
+
+export function replyToInboxItem(
+  itemType: 'contact' | 'support',
+  itemId: string,
+  payload: { subject: string; message: string },
+) {
+  return requestAuthJson<{
+    success: boolean;
+    message: string;
+    data: { id: string; status: string; status_label: string };
+  }>(`/superadmin/inbox/${itemType}/${itemId}/reply/`, {
+    method: 'POST',
+    body: payload,
+  });
+}

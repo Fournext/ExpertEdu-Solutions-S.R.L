@@ -32,6 +32,7 @@ from .serializers import (
     CustomerRegisterSerializer,
     DuplicateSubmissionError,
     HoneypotSpamError,
+    InboxReplySerializer,
     InboxStatusUpdateSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetSendCodeSerializer,
@@ -47,6 +48,7 @@ from .services import (
     hash_client_ip,
     provision_user_in_studio,
     send_contact_notification,
+    send_inbox_reply_email,
     send_password_reset_code_email,
     send_registration_emails,
     send_support_notification,
@@ -699,6 +701,110 @@ class SuperAdminInboxStatusView(APIView):
                     "success": True,
                     "data": {"id": str(obj.id), "status": obj.status},
                 }
+            )
+
+        return Response(
+            {"success": False, "message": "Tipo de buzón inválido."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class SuperAdminInboxReplyView(APIView):
+    """Sends an email reply from Superadmin to a contact inquiry or support ticket."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, item_type: str, item_id: str) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+
+        serializer = InboxReplySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reply_subject = serializer.validated_data.get("subject", "")
+        reply_message = serializer.validated_data["message"]
+
+        if item_type == "contact":
+            obj = ContactInquiry.objects.filter(id=item_id).first()
+            if not obj:
+                return Response(
+                    {"success": False, "message": "Mensaje no encontrado."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            mailbox = obj.target_inbox or settings.CONTACT_NOTIFICATION_EMAIL
+            sent = send_inbox_reply_email(
+                recipient_email=obj.email,
+                recipient_name=obj.full_name,
+                subject=reply_subject,
+                reply_body=reply_message,
+                original_subject=obj.subject,
+                original_body=obj.message,
+                mailbox_email=mailbox,
+            )
+            if not sent:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "No se pudo enviar el correo de respuesta. Revisa la configuración SMTP.",
+                    },
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            if obj.status in {ContactInquiry.Status.NEW, ContactInquiry.Status.IN_REVIEW}:
+                obj.status = ContactInquiry.Status.RESPONDED
+                obj.save(update_fields=["status", "updated_at"])
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Respuesta enviada a {obj.email}.",
+                    "data": {
+                        "id": str(obj.id),
+                        "status": obj.status,
+                        "status_label": obj.get_status_display(),
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        if item_type == "support":
+            obj = SupportTicket.objects.filter(id=item_id).first()
+            if not obj:
+                return Response(
+                    {"success": False, "message": "Ticket no encontrado."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            mailbox = obj.target_inbox or settings.SUPPORT_NOTIFICATION_EMAIL
+            sent = send_inbox_reply_email(
+                recipient_email=obj.email,
+                recipient_name=obj.full_name,
+                subject=reply_subject,
+                reply_body=reply_message,
+                original_subject=obj.subject,
+                original_body=obj.description,
+                mailbox_email=mailbox,
+                reference_code=obj.reference_code,
+            )
+            if not sent:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "No se pudo enviar el correo de respuesta. Revisa la configuración SMTP.",
+                    },
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+            if obj.status == SupportTicket.Status.OPEN:
+                obj.status = SupportTicket.Status.IN_PROGRESS
+                obj.save(update_fields=["status", "updated_at"])
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Respuesta enviada a {obj.email}.",
+                    "data": {
+                        "id": str(obj.id),
+                        "status": obj.status,
+                        "status_label": obj.get_status_display(),
+                    },
+                },
+                status=status.HTTP_200_OK,
             )
 
         return Response(

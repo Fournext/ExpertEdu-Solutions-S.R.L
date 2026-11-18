@@ -427,6 +427,22 @@ class InboxStatusUpdateSerializer(serializers.Serializer):
     status = serializers.CharField(max_length=20)
 
 
+class InboxReplySerializer(serializers.Serializer):
+    """Validates an outgoing superadmin reply to an inquiry or support ticket."""
+
+    subject = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    message = serializers.CharField(min_length=2, max_length=4000)
+
+    def validate_subject(self, value: str) -> str:
+        return value.strip()
+
+    def validate_message(self, value: str) -> str:
+        cleaned = value.strip()
+        if len(cleaned) < 2:
+            raise serializers.ValidationError("Escribe una respuesta válida.")
+        return cleaned
+
+
 class PasswordResetSendCodeSerializer(serializers.Serializer):
     """Validates email for password recovery OTP dispatch."""
 

@@ -9,6 +9,9 @@ import {
   Loader2,
   Mail,
   Plus,
+  RefreshCw,
+  Reply,
+  Send,
   Trash2,
   Upload,
   Users,
@@ -21,6 +24,7 @@ import {
   fetchSuperAdminOverview,
   getStoredSession,
   launchStudioSso,
+  replyToInboxItem,
   saveStoredSession,
   updateChatbotKnowledge,
   updateInboxItemStatus,
@@ -144,6 +148,12 @@ export const SuperAdminDashboard: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [launchingStudio, setLaunchingStudio] = useState(false);
+  const [refreshingInbox, setRefreshingInbox] = useState(false);
+  const [replyingKey, setReplyingKey] = useState<string | null>(null);
+  const [replySubject, setReplySubject] = useState('');
+  const [replyBody, setReplyBody] = useState('');
+  const [replySending, setReplySending] = useState(false);
+  const [inboxFeedback, setInboxFeedback] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -209,6 +219,75 @@ export const SuperAdminDashboard: React.FC = () => {
     } catch (err) {
       const apiErr = err as ApiErrorResult;
       setError(apiErr.message || 'No se pudo actualizar el estado del mensaje.');
+    }
+  };
+
+  const handleRefreshInbox = async () => {
+    setError('');
+    setInboxFeedback('');
+    setRefreshingInbox(true);
+    try {
+      const inbRes = await fetchSuperAdminInbox();
+      setInbox(inbRes.data);
+      setInboxFeedback('Buzones actualizados.');
+    } catch (err) {
+      const apiErr = err as ApiErrorResult;
+      setError(apiErr.message || 'No se pudieron recargar los correos entrantes.');
+    } finally {
+      setRefreshingInbox(false);
+    }
+  };
+
+  const handleOpenReply = (msg: InboxMessageItem) => {
+    const key = `${msg.item_type}-${msg.id}`;
+    if (replyingKey === key) {
+      setReplyingKey(null);
+      return;
+    }
+    const prefix = msg.reference_code ? `[${msg.reference_code}] ` : '';
+    setReplyingKey(key);
+    setReplySubject(`Re: ${prefix}${msg.subject}`);
+    setReplyBody('');
+    setInboxFeedback('');
+    setError('');
+  };
+
+  const handleSendReply = async (e: React.FormEvent, msg: InboxMessageItem) => {
+    e.preventDefault();
+    if (replyBody.trim().length < 2) {
+      setError('Escribe una respuesta antes de enviar.');
+      return;
+    }
+    setError('');
+    setInboxFeedback('');
+    setReplySending(true);
+    try {
+      const res = await replyToInboxItem(msg.item_type, msg.id, {
+        subject: replySubject.trim(),
+        message: replyBody.trim(),
+      });
+      setInbox((prev) => {
+        if (!prev) return prev;
+        const patchList = (items: InboxMessageItem[]) =>
+          items.map((item) =>
+            item.id === msg.id && item.item_type === msg.item_type
+              ? { ...item, status: res.data.status, status_label: res.data.status_label }
+              : item,
+          );
+        return {
+          ...prev,
+          commercial_messages: patchList(prev.commercial_messages),
+          support_messages: patchList(prev.support_messages),
+        };
+      });
+      setReplyingKey(null);
+      setReplyBody('');
+      setInboxFeedback(res.message || `Respuesta enviada a ${msg.email}.`);
+    } catch (err) {
+      const apiErr = err as ApiErrorResult;
+      setError(apiErr.message || 'No se pudo enviar la respuesta por correo.');
+    } finally {
+      setReplySending(false);
     }
   };
 
@@ -539,33 +618,57 @@ export const SuperAdminDashboard: React.FC = () => {
 
       {activeTab === 'inbox' && inbox && (
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setMailboxTab('commercial')}
-              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${
-                mailboxTab === 'commercial'
-                  ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                  : 'border-brand-border bg-white text-brand-slate'
-              }`}
-            >
-              <Mail className="h-4 w-4" aria-hidden="true" />
-              Comercial ({inbox.mailboxes.commercial}) — {inbox.commercial_messages.length}
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setMailboxTab('commercial')}
+                className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${
+                  mailboxTab === 'commercial'
+                    ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                    : 'border-brand-border bg-white text-brand-slate'
+                }`}
+              >
+                <Mail className="h-4 w-4" aria-hidden="true" />
+                Comercial ({inbox.mailboxes.commercial}) — {inbox.commercial_messages.length}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMailboxTab('support')}
+                className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${
+                  mailboxTab === 'support'
+                    ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                    : 'border-brand-border bg-white text-brand-slate'
+                }`}
+              >
+                <Mail className="h-4 w-4" aria-hidden="true" />
+                Soporte ({inbox.mailboxes.support}) — {inbox.support_messages.length}
+              </button>
+            </div>
 
             <button
               type="button"
-              onClick={() => setMailboxTab('support')}
-              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold ${
-                mailboxTab === 'support'
-                  ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                  : 'border-brand-border bg-white text-brand-slate'
-              }`}
+              onClick={handleRefreshInbox}
+              disabled={refreshingInbox}
+              className="inline-flex items-center gap-2 rounded-lg border border-brand-border bg-white px-4 py-2 text-sm font-semibold text-brand-graphite transition-colors hover:bg-stone-100 disabled:opacity-60"
             >
-              <Mail className="h-4 w-4" aria-hidden="true" />
-              Soporte ({inbox.mailboxes.support}) — {inbox.support_messages.length}
+              <RefreshCw
+                className={`h-4 w-4 ${refreshingInbox ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              {refreshingInbox ? 'Recargando...' : 'Recargar correos'}
             </button>
           </div>
+
+          {inboxFeedback && (
+            <div
+              role="status"
+              className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-medium text-teal-900"
+            >
+              {inboxFeedback}
+            </div>
+          )}
 
           <div className="space-y-4">
             {activeMessages.length === 0 ? (
@@ -576,9 +679,11 @@ export const SuperAdminDashboard: React.FC = () => {
               activeMessages.map((msg) => {
                 const statusOptions =
                   msg.item_type === 'contact' ? CONTACT_STATUSES : SUPPORT_STATUSES;
+                const msgKey = `${msg.item_type}-${msg.id}`;
+                const isReplying = replyingKey === msgKey;
                 return (
                   <div
-                    key={`${msg.item_type}-${msg.id}`}
+                    key={msgKey}
                     className="rounded-2xl border border-brand-border bg-white p-5 shadow-xs"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -589,7 +694,7 @@ export const SuperAdminDashboard: React.FC = () => {
                               {msg.reference_code}
                             </span>
                           )}
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 font-medium text-brand-graphite">
+                          <span className="rounded-full bg-stone-100 px-2.5 py-0.5 font-medium text-brand-graphite">
                             {msg.category_label}
                           </span>
                           <span>Destino: {msg.target_inbox}</span>
@@ -603,23 +708,110 @@ export const SuperAdminDashboard: React.FC = () => {
                         </p>
                       </div>
 
-                      <select
-                        aria-label={`Estado de ${msg.subject}`}
-                        value={msg.status}
-                        onChange={(e) => handleStatusChange(msg, e.target.value)}
-                        className="rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-graphite"
-                      >
-                        {statusOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReply(msg)}
+                          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                            isReplying
+                              ? 'border-brand-primary bg-brand-primary text-white'
+                              : 'border-brand-border bg-white text-brand-graphite hover:bg-stone-100'
+                          }`}
+                        >
+                          <Reply className="h-3.5 w-3.5" aria-hidden="true" />
+                          Responder
+                        </button>
+
+                        <select
+                          aria-label={`Estado de ${msg.subject}`}
+                          value={msg.status}
+                          onChange={(e) => handleStatusChange(msg, e.target.value)}
+                          className="rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-graphite"
+                        >
+                          {statusOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
 
                     <p className="mt-4 whitespace-pre-line rounded-xl bg-brand-surface p-3.5 text-sm text-brand-slate">
                       {msg.body}
                     </p>
+
+                    {isReplying && (
+                      <form
+                        onSubmit={(e) => handleSendReply(e, msg)}
+                        className="mt-4 space-y-3 rounded-xl border border-brand-border bg-brand-surface p-4"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-brand-slate">
+                          <span>
+                            Para: <strong className="text-brand-graphite">{msg.full_name}</strong> (
+                            {msg.email})
+                          </span>
+                          <span>Reply-To: {msg.target_inbox}</span>
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor={`reply-subject-${msgKey}`}
+                            className="block text-xs font-semibold text-brand-graphite"
+                          >
+                            Asunto
+                          </label>
+                          <input
+                            id={`reply-subject-${msgKey}`}
+                            type="text"
+                            value={replySubject}
+                            onChange={(e) => setReplySubject(e.target.value)}
+                            className="mt-1 w-full rounded-lg border border-brand-border bg-white px-3 py-2 text-sm text-brand-graphite"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor={`reply-body-${msgKey}`}
+                            className="block text-xs font-semibold text-brand-graphite"
+                          >
+                            Respuesta
+                          </label>
+                          <textarea
+                            id={`reply-body-${msgKey}`}
+                            rows={4}
+                            value={replyBody}
+                            onChange={(e) => setReplyBody(e.target.value)}
+                            placeholder={`Escribe tu respuesta para ${msg.full_name}...`}
+                            className="mt-1 w-full rounded-lg border border-brand-border bg-white px-3 py-2 text-sm text-brand-graphite"
+                            required
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setReplyingKey(null)}
+                            className="rounded-lg border border-brand-border bg-white px-3.5 py-2 text-xs font-semibold text-brand-slate hover:bg-stone-100"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={replySending}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-primary-hover disabled:opacity-60"
+                          >
+                            {replySending ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                            ) : (
+                              <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                            {replySending ? 'Enviando...' : 'Enviar respuesta'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 );
               })

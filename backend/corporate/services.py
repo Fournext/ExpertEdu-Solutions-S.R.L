@@ -12,7 +12,7 @@ import urllib.request
 from html.parser import HTMLParser
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
 from django.utils.html import escape
 
 from .models import (
@@ -108,6 +108,90 @@ def send_support_notification(ticket: SupportTicket) -> bool:
             "Failed to send support notification for ticket %s",
             ticket.reference_code,
         )
+        return False
+
+
+def send_inbox_reply_email(
+    *,
+    recipient_email: str,
+    recipient_name: str,
+    subject: str,
+    reply_body: str,
+    original_subject: str,
+    original_body: str,
+    mailbox_email: str,
+    reference_code: str = "",
+) -> bool:
+    """Send a formatted HTML + plain-text reply from Superadmin to an inquiry/ticket sender."""
+    clean_subject = (subject or "").strip()
+    if not clean_subject:
+        prefix = f"[{reference_code}] " if reference_code else ""
+        clean_subject = f"Re: {prefix}{original_subject}"
+
+    ref_line = f"Referencia: {reference_code}\n" if reference_code else ""
+    text_body = (
+        f"Hola {recipient_name},\n\n"
+        f"{reply_body}\n\n"
+        f"---\n"
+        f"En respuesta a tu mensaje ({original_subject}):\n"
+        f"{ref_line}"
+        f"{original_body}\n\n"
+        f"Equipo ExpertEdu Solutions S.R.L.\n"
+        f"Casilla de atención: {mailbox_email}\n"
+    )
+
+    escaped_name = escape(recipient_name)
+    escaped_reply = escape(reply_body).replace("\n", "<br />")
+    escaped_orig_subject = escape(original_subject)
+    escaped_orig_body = escape(original_body).replace("\n", "<br />")
+    escaped_mailbox = escape(mailbox_email)
+    ref_badge = (
+        f'<p style="margin:0 0 8px 0;font-size:12px;color:#0f766e;font-weight:600;">'
+        f"Ticket: {escape(reference_code)}</p>"
+        if reference_code
+        else ""
+    )
+
+    html_body = (
+        '<!DOCTYPE html><html lang="es"><body style="margin:0;padding:24px;'
+        'background-color:#fafaf9;font-family:\'Plus Jakarta Sans\',Arial,sans-serif;color:#1c1917;">'
+        '<div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;'
+        'border-radius:16px;overflow:hidden;">'
+        '<div style="background:#0f766e;padding:20px 24px;color:#ffffff;">'
+        '<p style="margin:0;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.85;">'
+        "ExpertEdu Solutions S.R.L.</p>"
+        f'<h1 style="margin:6px 0 0 0;font-size:18px;font-weight:700;">{escape(clean_subject)}</h1>'
+        "</div>"
+        '<div style="padding:24px;">'
+        f"{ref_badge}"
+        f'<p style="margin:0 0 14px 0;font-size:14px;">Hola <strong>{escaped_name}</strong>,</p>'
+        f'<div style="font-size:14px;line-height:1.65;color:#3f3f46;">{escaped_reply}</div>'
+        '<div style="margin-top:24px;padding:14px 16px;background:#fafaf9;border-left:3px solid #0f766e;'
+        'border-radius:8px;">'
+        f'<p style="margin:0 0 6px 0;font-size:12px;font-weight:700;color:#1c1917;">'
+        f"Mensaje original: {escaped_orig_subject}</p>"
+        f'<p style="margin:0;font-size:12px;line-height:1.5;color:#71717a;">{escaped_orig_body}</p>'
+        "</div>"
+        "</div>"
+        '<div style="padding:16px 24px;background:#f5f5f4;border-top:1px solid #e7e5e4;'
+        'font-size:12px;color:#71717a;">'
+        f"Si necesitas ampliar información, responde directamente a este correo ({escaped_mailbox})."
+        "</div></div></body></html>"
+    )
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=clean_subject,
+            body=text_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[recipient_email],
+            reply_to=[mailbox_email] if mailbox_email else None,
+        )
+        msg.attach_alternative(html_body, "text/html")
+        msg.send(fail_silently=False)
+        return True
+    except Exception:
+        logger.exception("Failed to send inbox reply to %s", recipient_email)
         return False
 
 
