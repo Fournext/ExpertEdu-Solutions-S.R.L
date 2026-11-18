@@ -7,6 +7,7 @@ import { ContactForm } from '../components/interactive/ContactForm';
 import { SupportTicketForm } from '../components/interactive/SupportTicketForm';
 import { StudioAccessButton } from '../components/ui/StudioAccessButton';
 import { RegisterForm } from '../components/interactive/AuthForms';
+import { CorporateChatbot } from '../components/interactive/CorporateChatbot';
 import * as api from '../services/api';
 
 describe('FaqAccordion', () => {
@@ -238,5 +239,36 @@ describe('RegisterForm', () => {
 
     fireEvent.click(screen.getByLabelText(/términos y condiciones/i));
     expect(submitBtn).toBeEnabled();
+  });
+});
+
+describe('CorporateChatbot', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('opens the public chatbot dialog and displays Gemini/KB answer', async () => {
+    const spy = vi.spyOn(api, 'askPublicChatbot').mockResolvedValue({
+      success: true,
+      data: {
+        answer: 'ExpertEdu Studio es nuestra plataforma educativa para Sistemas Expertos.',
+        provider: 'gemini',
+        sources_count: 1,
+      },
+    });
+
+    render(<CorporateChatbot />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir asistente virtual/i }));
+
+    const input = screen.getByLabelText(/pregunta para el asistente/i);
+    fireEvent.change(input, { target: { value: '¿Qué es ExpertEdu Studio?' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+    expect(
+      await screen.findByText(/ExpertEdu Studio es nuestra plataforma educativa/i),
+    ).toBeInTheDocument();
   });
 });

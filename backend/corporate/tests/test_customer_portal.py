@@ -148,3 +148,31 @@ def test_superadmin_dashboard_kpis_and_two_inboxes():
     inbox_data = inbox_res.json()["data"]
     assert len(inbox_data["commercial_messages"]) == 1
     assert len(inbox_data["support_messages"]) == 1
+
+    # Filter KPIs by service
+    filtered_ov = client.get("/api/v1/superadmin/overview/?product_code=EXPERTEDU_STUDIO")
+    assert filtered_ov.status_code == 200
+    assert filtered_ov.json()["data"]["selected_product"] == "EXPERTEDU_STUDIO"
+
+    # Admin loads chatbot knowledge entry
+    kb_res = client.post(
+        "/api/v1/superadmin/chatbot-knowledge/",
+        {
+            "title": "Horarios de atención institucional",
+            "category": "SOPORTE",
+            "content": "Atendemos demostraciones institucionales previa coordinación por correo.",
+            "is_active": True,
+        },
+        format="json",
+    )
+    assert kb_res.status_code == 201
+
+    # Public chatbot (anonymous) answers using loaded knowledge
+    public_client = APIClient()
+    chat_res = public_client.post(
+        "/api/v1/chatbot/ask/",
+        {"question": "¿Cuáles son los horarios de atención?"},
+        format="json",
+    )
+    assert chat_res.status_code == 200
+    assert chat_res.json()["data"]["sources_count"] >= 1

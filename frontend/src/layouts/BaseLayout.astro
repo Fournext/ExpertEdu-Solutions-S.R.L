@@ -2,6 +2,7 @@
 import '@/styles/global.css';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import SiteFooter from '@/components/layout/SiteFooter.astro';
+import { CorporateChatbot } from '@/components/interactive/CorporateChatbot';
 import { SITE_CONFIG } from '@/config/site';
 
 interface Props {
@@ -96,5 +97,6 @@ const defaultOrgSchema = {
     </main>
 
     <SiteFooter />
+    <CorporateChatbot client:load />
   </body>
 </html>

@@ -323,6 +323,8 @@ export function launchStudioSso() {
 }
 
 export interface SuperAdminOverviewData {
+  selected_product: string;
+  available_products: Array<{ code: string; label: string }>;
   kpis: {
     total_customers: number;
     total_active_subscriptions: number;
@@ -369,10 +371,76 @@ export interface SuperAdminInboxData {
   support_messages: InboxMessageItem[];
 }
 
-export function fetchSuperAdminOverview() {
+export function fetchSuperAdminOverview(productCode = 'ALL') {
+  const qs =
+    productCode && productCode !== 'ALL'
+      ? `?product_code=${encodeURIComponent(productCode)}`
+      : '';
   return requestAuthJson<{ success: boolean; data: SuperAdminOverviewData }>(
-    '/superadmin/overview/',
+    `/superadmin/overview/${qs}`,
   );
+}
+
+export type KnowledgeCategory = 'EMPRESA' | 'PRODUCTO' | 'PRECIOS' | 'SOPORTE' | 'OTRO';
+
+export interface ChatbotKnowledgeItem {
+  id: string;
+  title: string;
+  category: KnowledgeCategory;
+  category_label: string;
+  content: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function askPublicChatbot(
+  question: string,
+  history: Array<{ role: 'user' | 'model'; text: string }> = [],
+) {
+  return requestAuthJson<{
+    success: boolean;
+    data: { answer: string; provider: string; sources_count: number };
+  }>('/chatbot/ask/', {
+    method: 'POST',
+    body: { question, history },
+    token: null,
+  });
+}
+
+export function fetchChatbotKnowledge() {
+  return requestAuthJson<{ success: boolean; data: ChatbotKnowledgeItem[] }>(
+    '/superadmin/chatbot-knowledge/',
+  );
+}
+
+export function createChatbotKnowledge(payload: {
+  title: string;
+  category: KnowledgeCategory;
+  content: string;
+  is_active?: boolean;
+}) {
+  return requestAuthJson<{ success: boolean; data: ChatbotKnowledgeItem }>(
+    '/superadmin/chatbot-knowledge/',
+    { method: 'POST', body: payload },
+  );
+}
+
+export function updateChatbotKnowledge(
+  id: string,
+  payload: Partial<{ title: string; category: KnowledgeCategory; content: string; is_active: boolean }>,
+) {
+  return requestAuthJson<{ success: boolean; data: ChatbotKnowledgeItem }>(
+    `/superadmin/chatbot-knowledge/${id}/`,
+    { method: 'PATCH', body: payload },
+  );
+}
+
+export function deleteChatbotKnowledge(id: string) {
+  return requestAuthJson<{ success: boolean }>(`/superadmin/chatbot-knowledge/${id}/`, {
+    method: 'PATCH',
+    body: undefined,
+  }).catch(() => undefined);
 }
 
 export function fetchSuperAdminInbox() {

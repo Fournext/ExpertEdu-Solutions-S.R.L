@@ -11,9 +11,12 @@ from .views import (
     HealthCheckView,
     PasswordResetConfirmView,
     PasswordResetSendCodeView,
+    PublicChatbotAskView,
     SendVerificationCodeView,
     StudioEnrollView,
     StudioLaunchView,
+    SuperAdminChatbotKnowledgeDetailView,
+    SuperAdminChatbotKnowledgeListCreateView,
     SuperAdminInboxStatusView,
     SuperAdminInboxView,
     SuperAdminOverviewView,
@@ -62,5 +65,17 @@ urlpatterns = [
         "superadmin/inbox/<str:item_type>/<str:item_id>/",
         SuperAdminInboxStatusView.as_view(),
         name="api-superadmin-inbox-status",
+    ),
+    # Public Gemini Chatbot & Admin Knowledge Base
+    path("chatbot/ask/", PublicChatbotAskView.as_view(), name="api-chatbot-ask"),
+    path(
+        "superadmin/chatbot-knowledge/",
+        SuperAdminChatbotKnowledgeListCreateView.as_view(),
+        name="api-superadmin-chatbot-kb",
+    ),
+    path(
+        "superadmin/chatbot-knowledge/<str:entry_id>/",
+        SuperAdminChatbotKnowledgeDetailView.as_view(),
+        name="api-superadmin-chatbot-kb-detail",
     ),
 ]

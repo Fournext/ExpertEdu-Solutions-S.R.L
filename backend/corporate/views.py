@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import (
+    ChatbotKnowledgeEntry,
     ContactInquiry,
     CorporateSessionToken,
     CustomerProductMembership,
@@ -21,6 +22,8 @@ from .models import (
     SupportTicket,
 )
 from .serializers import (
+    ChatbotAskSerializer,
+    ChatbotKnowledgeEntrySerializer,
     ContactInquirySerializer,
     CustomerLoginSerializer,
     CustomerMembershipSerializer,
@@ -37,6 +40,7 @@ from .serializers import (
     VerifyEmailCodeSerializer,
 )
 from .services import (
+    ask_corporate_chatbot,
     hash_client_ip,
     provision_user_in_studio,
     send_contact_notification,
@@ -479,8 +483,11 @@ class SuperAdminOverviewView(APIView):
         if denied:
             return denied
 
+        product_filter = request.query_params.get("product_code", "ALL").strip().upper()
         total_customers = User.objects.filter(is_superuser=False).count()
         active_memberships = CustomerProductMembership.objects.filter(is_active=True)
+        if product_filter and product_filter != "ALL":
+            active_memberships = active_memberships.filter(product_code=product_filter)
 
         by_product = list(
             active_memberships.values("product_code").annotate(total=Count("id"))
@@ -501,9 +508,13 @@ class SuperAdminOverviewView(APIView):
         customers = []
         for u in customers_qs:
             prof = getattr(u, "customer_profile", None)
+            all_memberships = list(u.product_memberships.all())
+            if product_filter and product_filter != "ALL":
+                if not any(m.product_code == product_filter for m in all_memberships):
+                    continue
             memberships = [
                 CustomerMembershipSerializer(m).data
-                for m in u.product_memberships.all()
+                for m in all_memberships
             ]
             customers.append(
                 {
@@ -517,10 +528,17 @@ class SuperAdminOverviewView(APIView):
                 }
             )
 
+        available_products = [
+            {"code": code, "label": label}
+            for code, label in CustomerProductMembership.ProductCode.choices
+        ]
+
         return Response(
             {
                 "success": True,
                 "data": {
+                    "selected_product": product_filter or "ALL",
+                    "available_products": available_products,
                     "kpis": {
                         "total_customers": total_customers,
                         "total_active_subscriptions": active_memberships.count(),
@@ -737,3 +755,85 @@ class PasswordResetConfirmView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class PublicChatbotAskView(APIView):
+    """Public Gemini-powered corporate chatbot grounded in admin-managed knowledge."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ContactRateThrottle]
+
+    def post(self, request) -> Response:
+        serializer = ChatbotAskSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = ask_corporate_chatbot(
+            question=serializer.validated_data["question"],
+            history=serializer.validated_data.get("history", []),
+        )
+        return Response({"success": True, "data": result}, status=status.HTTP_200_OK)
+
+
+class SuperAdminChatbotKnowledgeListCreateView(APIView):
+    """Lists and creates chatbot knowledge entries from the Superadmin portal."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+        entries = ChatbotKnowledgeEntry.objects.all()
+        return Response(
+            {
+                "success": True,
+                "data": ChatbotKnowledgeEntrySerializer(entries, many=True).data,
+            }
+        )
+
+    def post(self, request) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+        serializer = ChatbotKnowledgeEntrySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        entry = serializer.save()
+        return Response(
+            {"success": True, "data": ChatbotKnowledgeEntrySerializer(entry).data},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SuperAdminChatbotKnowledgeDetailView(APIView):
+    """Updates or deletes a chatbot knowledge entry from the Superadmin portal."""
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, entry_id: str) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+        entry = ChatbotKnowledgeEntry.objects.filter(id=entry_id).first()
+        if not entry:
+            return Response(
+                {"success": False, "message": "Registro no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        serializer = ChatbotKnowledgeEntrySerializer(entry, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        entry = serializer.save()
+        return Response(
+            {"success": True, "data": ChatbotKnowledgeEntrySerializer(entry).data}
+        )
+
+    def delete(self, request, entry_id: str) -> Response:
+        denied = _require_superadmin(request)
+        if denied:
+            return denied
+        entry = ChatbotKnowledgeEntry.objects.filter(id=entry_id).first()
+        if not entry:
+            return Response(
+                {"success": False, "message": "Registro no encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        entry.delete()
+        return Response({"success": True}, status=status.HTTP_200_OK)

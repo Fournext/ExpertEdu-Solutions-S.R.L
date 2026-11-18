@@ -272,3 +272,34 @@ class CorporateSessionToken(models.Model):
 
     def is_expired(self) -> bool:
         return timezone.now() > self.expires_at
+
+
+class ChatbotKnowledgeEntry(models.Model):
+    """Admin-managed knowledge base entries used to ground the public Gemini chatbot."""
+
+    class Category(models.TextChoices):
+        EMPRESA = "EMPRESA", "Empresa (ExpertEdu)"
+        PRODUCTO = "PRODUCTO", "Producto (ExpertEdu Studio)"
+        PRECIOS = "PRECIOS", "Planes y precios"
+        SOPORTE = "SOPORTE", "Soporte y contacto"
+        OTRO = "OTRO", "Información adicional"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=160)
+    category = models.CharField(
+        max_length=24,
+        choices=Category.choices,
+        default=Category.EMPRESA,
+    )
+    content = models.TextField(max_length=6000)
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        verbose_name = "Conocimiento del Chatbot"
+        verbose_name_plural = "Conocimientos del Chatbot"
+
+    def __str__(self) -> str:
+        return f"[{self.get_category_display()}] {self.title}"

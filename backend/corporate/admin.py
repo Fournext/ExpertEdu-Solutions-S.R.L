@@ -3,6 +3,7 @@
 from django.contrib import admin
 
 from .models import (
+    ChatbotKnowledgeEntry,
     ContactInquiry,
     CustomerProductMembership,
     CustomerProfile,
@@ -77,3 +78,10 @@ class EmailVerificationCodeAdmin(admin.ModelAdmin):
     list_display = ("email", "code", "is_verified", "attempts", "expires_at", "created_at")
     list_filter = ("is_verified",)
     search_fields = ("email",)
+
+
+@admin.register(ChatbotKnowledgeEntry)
+class ChatbotKnowledgeEntryAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "is_active", "updated_at")
+    list_filter = ("category", "is_active")
+    search_fields = ("title", "content")

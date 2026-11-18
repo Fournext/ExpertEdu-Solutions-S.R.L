@@ -10,7 +10,12 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.utils.html import escape
 
-from .models import ContactInquiry, CustomerProductMembership, SupportTicket
+from .models import (
+    ChatbotKnowledgeEntry,
+    ContactInquiry,
+    CustomerProductMembership,
+    SupportTicket,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -405,6 +410,135 @@ def send_registration_emails(user) -> dict[str, bool]:
             logger.exception("Failed to send %s email to %s", key, user.email)
             results[key] = False
     return results
+
+
+DEFAULT_CORPORATE_CONTEXT = (
+    "EMPRESA: ExpertEdu Solutions S.R.L. (marca comercial: ExpertEdu).\n"
+    "Sector: Tecnología Educativa (EdTech) y desarrollo de software, "
+    "ubicada en Santa Cruz de la Sierra, Bolivia.\n"
+    "Misión: Desarrollar soluciones tecnológicas innovadoras que contribuyan a "
+    "optimizar los procesos de enseñanza y aprendizaje.\n"
+    "Visión: Consolidarse como empresa tecnológica de referencia en Bolivia y "
+    "Latinoamérica en soluciones educativas innovadoras.\n"
+    "Canales oficiales: contacto@expertedu.bo (comercial/demos) y "
+    "soporte@expertedu.bo (soporte técnico).\n\n"
+    "PRODUCTO PRINCIPAL: ExpertEdu Studio.\n"
+    "Descripción: Plataforma educativa interactiva de apoyo docente para la "
+    "enseñanza de Sistemas Expertos.\n"
+    "Capacidades: bases de conocimiento, editor visual interactivo, hechos y "
+    "reglas, motor de inferencia Forward Chaining paso a paso, validación de "
+    "bases de conocimiento, actividades educativas y asistencia con IA.\n"
+    "Planes referenciales: Plan Estudiante, Plan Docente Individual y "
+    "Licencia Institucional.\n"
+    "Acceso: Registro en la web corporativa con elección de rol (Docente o "
+    "Estudiante) y plan, compartiendo sesión con ExpertEdu Studio."
+)
+
+
+def ask_corporate_chatbot(question: str, history: list[dict] | None = None) -> dict:
+    """
+    Answers public questions about ExpertEdu and ExpertEdu Studio using Gemini API,
+    grounded with all active ChatbotKnowledgeEntry items loaded by Superadmin.
+    """
+    active_entries = list(ChatbotKnowledgeEntry.objects.filter(is_active=True)[:40])
+    extra_blocks = [
+        f"### [{entry.get_category_display()}] {entry.title}\n{entry.content}"
+        for entry in active_entries
+    ]
+    knowledge_text = DEFAULT_CORPORATE_CONTEXT
+    if extra_blocks:
+        knowledge_text += "\n\nINFORMACIÓN ADICIONAL CARGADA POR ADMINISTRACIÓN:\n" + "\n\n".join(
+            extra_blocks
+        )
+
+    api_key = getattr(settings, "GEMINI_API_KEY", "")
+    model_name = getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
+
+    if api_key:
+        system_prompt = (
+            "Eres el asistente virtual oficial de ExpertEdu Solutions S.R.L. "
+            "Responde en español, de forma clara, profesional y concisa. "
+            "Responde únicamente sobre la empresa ExpertEdu, sus servicios, planes y su producto "
+            "ExpertEdu Studio utilizando la base de conocimiento proporcionada. "
+            "No inventes cifras, certificaciones ni datos legales no incluidos.\n\n"
+            f"BASE DE CONOCIMIENTO:\n{knowledge_text}"
+        )
+        contents = []
+        for msg in (history or [])[-6:]:
+            role = "user" if msg.get("role") == "user" else "model"
+            text = str(msg.get("text", "")).strip()
+            if text:
+                contents.append({"role": role, "parts": [{"text": text[:800]}]})
+        contents.append({"role": "user", "parts": [{"text": question}]})
+
+        payload = json.dumps(
+            {
+                "system_instruction": {"parts": [{"text": system_prompt}]},
+                "contents": contents,
+                "generationConfig": {
+                    "temperature": 0.3,
+                    "maxOutputTokens": 600,
+                },
+            }
+        ).encode("utf-8")
+
+        endpoint = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{model_name}:generateContent?key={api_key}"
+        )
+        req = urllib.request.Request(
+            endpoint,
+            data=payload,
+            method="POST",
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                parsed = json.loads(resp.read().decode("utf-8"))
+            candidates = parsed.get("candidates") or []
+            if candidates:
+                parts = candidates[0].get("content", {}).get("parts") or []
+                answer_text = "".join(p.get("text", "") for p in parts).strip()
+                if answer_text:
+                    return {
+                        "answer": answer_text,
+                        "provider": "gemini",
+                        "sources_count": len(active_entries),
+                    }
+        except Exception:
+            logger.exception("Gemini API call failed; using knowledge base fallback.")
+
+    # Fallback local si no hay GEMINI_API_KEY o si Gemini no respondió
+    q_words = {w for w in question.lower().split() if len(w) >= 3}
+    best_entry = None
+    best_score = 0
+    for entry in active_entries:
+        haystack = f"{entry.title} {entry.content}".lower()
+        score = sum(1 for w in q_words if w in haystack)
+        if score > best_score:
+            best_score = score
+            best_entry = entry
+
+    if best_entry:
+        fallback_answer = (
+            f"Sobre **{best_entry.title}**: {best_entry.content}\n\n"
+            "Si necesitas atención personalizada, contáctanos en contacto@expertedu.bo "
+            "o desde la sección /contacto."
+        )
+    else:
+        fallback_answer = (
+            "ExpertEdu Solutions S.R.L. desarrolla soluciones tecnológicas educativas, "
+            "siendo su producto principal ExpertEdu Studio (plataforma interactiva para "
+            "enseñanza de Sistemas Expertos con editor visual, motor Forward Chaining y "
+            "validación de bases de conocimiento). Puedes registrarte, elegir tu rol "
+            "(Docente o Estudiante) o escribirnos a contacto@expertedu.bo."
+        )
+
+    return {
+        "answer": fallback_answer,
+        "provider": "knowledge_base",
+        "sources_count": len(active_entries),
+    }
 
 
 def provision_user_in_studio(user, role_code: str) -> dict:

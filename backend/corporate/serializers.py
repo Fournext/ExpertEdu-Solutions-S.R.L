@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import (
+    ChatbotKnowledgeEntry,
     ContactInquiry,
     CustomerProductMembership,
     CustomerProfile,
@@ -480,3 +481,39 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         record.save(update_fields=["is_verified"])
         attrs["user"] = user
         return attrs
+
+
+class ChatbotKnowledgeEntrySerializer(serializers.ModelSerializer):
+    category_label = serializers.CharField(source="get_category_display", read_only=True)
+
+    class Meta:
+        model = ChatbotKnowledgeEntry
+        fields = [
+            "id",
+            "title",
+            "category",
+            "category_label",
+            "content",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_title(self, value: str) -> str:
+        return validate_clean_text(value, "El título", 3)
+
+    def validate_content(self, value: str) -> str:
+        return validate_clean_text(value, "El contenido", 10)
+
+
+class ChatbotAskSerializer(serializers.Serializer):
+    question = serializers.CharField(max_length=1000)
+    history = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        default=list,
+    )
+
+    def validate_question(self, value: str) -> str:
+        return validate_clean_text(value, "La pregunta", 2)

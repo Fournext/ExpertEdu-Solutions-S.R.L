@@ -162,6 +162,10 @@ STUDIO_SERVICE_KEY = os.getenv(
     "STUDIO_SERVICE_KEY", "expertedu-studio-sso-dev-key"
 )
 
+# Gemini Corporate Chatbot
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+
 # Security Headers
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
