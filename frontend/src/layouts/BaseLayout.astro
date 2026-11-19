@@ -37,6 +37,7 @@ const defaultOrgSchema = {
   email: SITE_CONFIG.contact.commercialEmail,
   address: {
     '@type': 'PostalAddress',
+    streetAddress: SITE_CONFIG.location.streetAddress,
     addressLocality: SITE_CONFIG.location.city,
     addressCountry: 'BO',
   },

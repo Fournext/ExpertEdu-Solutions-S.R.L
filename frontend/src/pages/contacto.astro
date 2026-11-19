@@ -1,5 +1,5 @@
 ---
-import { Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Mail, MapPin, ShieldCheck } from 'lucide-react';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { ContactForm } from '../components/interactive/ContactForm';
 import { SITE_CONFIG } from '../config/site';
@@ -82,13 +82,47 @@ import { SITE_CONFIG } from '../config/site';
             <li class="flex items-start gap-3">
               <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand-primary" aria-hidden="true" />
               <div>
-                <p class="font-semibold text-brand-graphite">Ubicación</p>
+                <p class="font-semibold text-brand-graphite">Sede de la empresa</p>
                 <p class="mt-0.5 text-brand-slate">
+                  {SITE_CONFIG.location.streetAddress}
+                  <br />
                   {SITE_CONFIG.location.city}, {SITE_CONFIG.location.country}
                 </p>
               </div>
             </li>
           </ul>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-brand-border bg-white shadow-xs">
+          <div class="flex items-center justify-between gap-3 border-b border-brand-border bg-brand-surface px-5 py-3.5">
+            <div>
+              <h3 class="font-display text-sm font-bold text-brand-graphite">
+                Ubicación en el mapa
+              </h3>
+              <p class="text-xs text-brand-muted">
+                {SITE_CONFIG.location.streetAddress}
+              </p>
+            </div>
+            <a
+              href={SITE_CONFIG.location.mapLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-brand-border bg-white px-3 py-1.5 text-xs font-semibold text-brand-primary transition-colors hover:bg-stone-100"
+            >
+              Abrir en Maps
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          </div>
+          <div class="h-64 w-full bg-stone-100">
+            <iframe
+              title={`Mapa de ubicación de ${SITE_CONFIG.legalName} en ${SITE_CONFIG.location.addressNote}`}
+              src={SITE_CONFIG.location.mapEmbedUrl}
+              class="h-full w-full border-0"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              allowfullscreen
+            ></iframe>
+          </div>
         </div>
 
         <div class="rounded-2xl border border-brand-border bg-white p-6">

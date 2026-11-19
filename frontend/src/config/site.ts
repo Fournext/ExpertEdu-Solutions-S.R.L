@@ -30,9 +30,14 @@ export const SITE_CONFIG = {
   apiBaseUrl:
     import.meta.env.PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
   location: {
+    streetAddress: 'Ave 16 de Noviembre # 36',
     city: 'Santa Cruz de la Sierra',
     country: 'Bolivia',
-    addressNote: 'Santa Cruz de la Sierra, Bolivia (Atención previa coordinación)',
+    addressNote: 'Ave 16 de Noviembre # 36, Santa Cruz de la Sierra, Bolivia',
+    mapEmbedUrl:
+      'https://maps.google.com/maps?q=Ave%2016%20de%20Noviembre%2036%2C%20Santa%20Cruz%20de%20la%20Sierra%2C%20Bolivia&t=&z=16&ie=UTF8&iwloc=&output=embed',
+    mapLinkUrl:
+      'https://www.google.com/maps/search/?api=1&query=Ave+16+de+Noviembre+36,+Santa+Cruz+de+la+Sierra,+Bolivia',
   },
   contact: {
     commercialEmail:
