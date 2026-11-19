@@ -255,12 +255,12 @@ def _build_corporate_email_html(
     cta_label: str | None = None,
     cta_url: str | None = None,
 ) -> str:
-    """Builds a clean, responsive HTML email template for ExpertEdu Solutions S.R.L."""
+    """Builds a clean, responsive HTML email template matching the landing's palette."""
     cta_block = ""
     if cta_label and cta_url:
         cta_block = (
             f'<div style="margin-top:24px;text-align:center;">'
-            f'<a href="{escape(cta_url)}" style="display:inline-block;background:#1E40AF;'
+            f'<a href="{escape(cta_url)}" style="display:inline-block;background:#0F766E;'
             f'color:#FFFFFF;text-decoration:none;font-weight:600;font-size:14px;'
             f'padding:12px 24px;border-radius:8px;">{escape(cta_label)}</a>'
             f"</div>"
@@ -268,24 +268,27 @@ def _build_corporate_email_html(
 
     return (
         '<!DOCTYPE html><html lang="es"><body style="margin:0;padding:0;'
-        'background-color:#F1F5F9;font-family:Arial,Helvetica,sans-serif;color:#0F172A;">'
+        'background-color:#FAFAF9;'
+        'font-family:\'Plus Jakarta Sans\',Arial,Helvetica,sans-serif;color:#1C1917;">'
         '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" '
         'style="padding:24px 12px;"><tr><td align="center">'
         '<table role="presentation" width="600" cellspacing="0" cellpadding="0" '
-        'style="max-width:600px;width:100%;background:#FFFFFF;border-radius:12px;'
-        'overflow:hidden;border:1px solid #E2E8F0;">'
-        '<tr><td style="background:#1E40AF;padding:24px 28px;color:#FFFFFF;">'
+        'style="max-width:600px;width:100%;background:#FFFFFF;border-radius:16px;'
+        'overflow:hidden;border:1px solid #E7E5E4;">'
+        '<tr><td style="background:#0F766E;padding:24px 28px;color:#FFFFFF;">'
         '<p style="margin:0;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;'
-        'color:#BFDBFE;font-weight:700;">ExpertEdu Solutions S.R.L.</p>'
-        f'<h1 style="margin:6px 0 0;font-size:20px;line-height:1.3;">{escape(title)}</h1>'
-        f'<p style="margin:6px 0 0;font-size:13px;color:#DBEAFE;">{escape(subtitle)}</p>'
+        'color:#CCFBF1;font-weight:700;">ExpertEdu Solutions S.R.L.</p>'
+        f'<h1 style="margin:6px 0 0;font-size:20px;line-height:1.3;font-weight:700;">'
+        f"{escape(title)}</h1>"
+        f'<p style="margin:6px 0 0;font-size:13px;color:#CCFBF1;">{escape(subtitle)}</p>'
         '</td></tr>'
-        f'<tr><td style="padding:28px;font-size:14px;line-height:1.6;color:#334155;">'
+        f'<tr><td style="padding:28px;font-size:14px;line-height:1.65;color:#3F3F46;">'
         f"{sections_html}{cta_block}"
         '</td></tr>'
-        '<tr><td style="background:#F8FAFC;padding:16px 28px;border-top:1px solid #E2E8F0;'
-        'font-size:12px;color:#64748B;">'
-        'ExpertEdu Solutions S.R.L. · Santa Cruz de la Sierra, Bolivia<br/>'
+        '<tr><td style="background:#F5F5F4;padding:16px 28px;border-top:1px solid #E7E5E4;'
+        'font-size:12px;color:#71717A;">'
+        'ExpertEdu Solutions S.R.L. · Ave 16 de Noviembre # 36, '
+        'Santa Cruz de la Sierra, Bolivia<br/>'
         f'Comercial: {escape(settings.CONTACT_NOTIFICATION_EMAIL)} · '
         f'Soporte: {escape(settings.SUPPORT_NOTIFICATION_EMAIL)}'
         '</td></tr></table></td></tr></table></body></html>'
@@ -322,11 +325,12 @@ def send_registration_emails(user) -> dict[str, bool]:
             "<p>Gracias por registrarte en el portal corporativo de "
             "<strong>ExpertEdu Solutions S.R.L.</strong> Tu correo electrónico ha sido "
             "verificado y tu cuenta ya se encuentra activa.</p>"
-            '<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;'
+            '<div style="background:#FAFAF9;border:1px solid #E7E5E4;'
+            'border-left:3px solid #0F766E;border-radius:10px;'
             'padding:14px 16px;margin:16px 0;">'
-            '<p style="margin:0 0 6px;font-weight:700;color:#0F172A;">'
+            '<p style="margin:0 0 6px;font-weight:700;color:#1C1917;">'
             "¿Qué puedes hacer ahora?</p>"
-            '<ul style="margin:0;padding-left:18px;color:#475569;">'
+            '<ul style="margin:0;padding-left:18px;color:#3F3F46;">'
             "<li>Activar <strong>ExpertEdu Studio</strong> eligiendo tu rol "
             "(Docente o Estudiante) y plan.</li>"
             "<li>Ingresar a la plataforma con la misma sesión y contraseña.</li>"
